@@ -30,3 +30,5 @@
 # Qt
 *.pro.user.*
 *.pro.user
+
+data/
