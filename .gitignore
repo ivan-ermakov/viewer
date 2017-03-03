@@ -28,4 +28,5 @@
 *.app
 
 # Qt
-*.pro.user*
+*.pro.user.*
+*.pro.user
