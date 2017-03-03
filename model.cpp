@@ -57,10 +57,10 @@ Model::~Model()
 
 void Model::loadObj(std::string filename)
 {
-    //std::vector<QVector3D> vertices;
     std::vector<QVector3D> faceNormals;
     std::vector<Vertex> vdata;
     std::vector<GLuint> indices;
+    pivot = QVector3D(0, 0, 0);
 
     std::ifstream in(filename, std::ios::in);
     if (!in)
@@ -96,6 +96,8 @@ void Model::loadObj(std::string filename)
 
             vtx.pos.setX(x); vtx.pos.setY(y); vtx.pos.setZ(z);
             vdata.push_back(vtx);
+
+            pivot += vtx.pos;
         }
         else if (line == "f")
         {
@@ -158,6 +160,8 @@ void Model::loadObj(std::string filename)
         for (int i = 0; i < (int)vdata.size(); ++i)
             vdata[i].norm.normalize();
     }
+
+    pivot /= vdata.size();
 
     arrayBuf.bind();
     arrayBuf.allocate(vdata.data(), (int)vdata.size() * sizeof(Vertex));

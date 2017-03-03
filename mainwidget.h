@@ -45,9 +45,6 @@ protected:
     void paintGL() override;
 
 public slots:
-    void handleRotateButton();
-    void handleMoveButton();
-    void handleScaleButton();
     void openModelDialog();
 
 private:
@@ -55,10 +52,6 @@ private:
     QMenu* fileMenu;
     QAction* openAct;
     QAction* exitAct;
-    QPushButton* rotateButton;
-    QPushButton* moveButton;
-    QPushButton* scaleButton;
-    QPushButton* modelButton;
 
     QBasicTimer timer;
     QOpenGLShaderProgram program;
@@ -78,8 +71,6 @@ private:
     QVector3D translation;
     qreal translationSpeed;
     qreal scale;
-
-    Tool curTool;
 };
 
 #endif // MAINWIDGET_H

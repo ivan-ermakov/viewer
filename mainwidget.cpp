@@ -13,7 +13,6 @@ MainWidget::MainWidget(std::string mdl_file, QWidget *parent) :
     translationSpeed(0.005),
     scale(1),
     translation(0, 0, -5),
-    curTool(Tool::Rotate),
     model_file(mdl_file)
 {    
     openAct = new QAction(tr("&Open"), this);
@@ -138,21 +137,6 @@ void MainWidget::wheelEvent(QWheelEvent* e)
     update();
 }
 
-void MainWidget::handleRotateButton()
-{
-    curTool = Tool::Rotate;
-}
-
-void MainWidget::handleMoveButton()
-{
-    curTool = Tool::Move;
-}
-
-void MainWidget::handleScaleButton()
-{
-    curTool = Tool::Scale;
-}
-
 void MainWidget::openModelDialog()
 {
     QStringList fileNames = QFileDialog::getOpenFileNames(this, tr("Open File"),"/data/",tr("Wavefront Model Files (*.obj)"));
@@ -238,8 +222,12 @@ void MainWidget::paintGL()
 
     // Calculate model view transformation
     modelView.setToIdentity();
+    /*modelView.translate(translation);
+    modelView.rotate(rotation);*/
     modelView.translate(translation);
+    modelView.translate(geometries->pivot);
     modelView.rotate(rotation);
+    modelView.translate(-geometries->pivot);
     modelView.scale(scale);
 
     // Set modelview-projection matrix

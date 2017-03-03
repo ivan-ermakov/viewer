@@ -16,6 +16,8 @@ public:
 
     void draw(QOpenGLShaderProgram *program);
 
+    QVector3D pivot;
+
 private:
     void loadObj(std::string);
 
