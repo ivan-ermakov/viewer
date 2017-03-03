@@ -14,6 +14,7 @@
 #include <QPushButton>
 #include <QMenuBar>
 #include <QMenu>
+#include <QColor>
 
 #include "model.h"
 
@@ -46,6 +47,7 @@ protected:
 
 public slots:
     void openModelDialog();
+    void modelColorDialog();
 
 private:
     QMenuBar* menuBar;
@@ -71,6 +73,9 @@ private:
     QVector3D translation;
     qreal translationSpeed;
     qreal scale;
+
+    QColor modelColor;
+    QColor lightColor;
 };
 
 #endif // MAINWIDGET_H

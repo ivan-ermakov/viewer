@@ -2,6 +2,7 @@
 
 #include <QMouseEvent>
 #include <QFileDialog>
+#include <QColorDialog>
 
 #include <math.h>
 
@@ -151,6 +152,11 @@ void MainWidget::openModelDialog()
             geometries = new Model(model_file);
         }
     }
+}
+
+void MainWidget::modelColorDialog()
+{
+    //modelColor;
 }
 
 void MainWidget::timerEvent(QTimerEvent *)
