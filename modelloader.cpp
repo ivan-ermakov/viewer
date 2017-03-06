@@ -108,6 +108,11 @@ void ModelLoader::run()
                  return;
              }
 
+             if (a < 0)
+                 a = vdata.length() + a;
+             else
+                 --a;
+
              //std::cout << s << "\t" << a << "/" << n << "\t";
 
              ss >> b;
@@ -142,7 +147,7 @@ void ModelLoader::run()
                  if (precomputedNormals) ss >> n4;
              }
 
-             indices.push_back(--a);
+             indices.push_back(a);
              indices.push_back(--b);
              indices.push_back(--c);
 
@@ -178,6 +183,10 @@ void ModelLoader::run()
         {
             precomputedNormals = false;
             texturePresent = false;
+        }
+        else
+        {
+            std::cout << "Unknown line: " << s;
         }
 
         //mdl->progress->setValue(in.tellg());

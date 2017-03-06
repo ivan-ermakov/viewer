@@ -25,6 +25,7 @@ void main()
     //calculate the cosine of the angle of incidence
     float brightness = dot(normal, surfaceToLight) / (length(surfaceToLight) * length(normal));
     brightness = abs(brightness);
+    //brightness = clamp(brightness, 0., 1.);
 
     //calculate final color of the pixel, based on:
     // 1. The angle of incidence: brightness
