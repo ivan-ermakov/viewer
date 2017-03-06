@@ -4,6 +4,7 @@ uniform mat4 m_model_view;
 
 uniform vec3 lightPos;
 uniform vec4 lightColor;
+uniform vec4 modelColor;
 
 in vec3 fragNormal;
 in vec3 fragVert;
@@ -29,7 +30,7 @@ void main()
     // 1. The angle of incidence: brightness
     // 2. The color/intensities of the light: light.intensities
     // 3. The texture and texture coord: texture(tex, fragTexCoord)
-    vec4 surfaceColor = vec4(1.0, 1.0, 1.0, 1.0); //texture(tex, fragTexCoord);
+    vec4 surfaceColor = modelColor; //texture(tex, fragTexCoord);
     //finalColor = vec4(brightness * lightColor * surfaceColor);
     //finalColor.a = 1.;
     finalColor = vec4(vec3(brightness * lightColor * surfaceColor), 1.);

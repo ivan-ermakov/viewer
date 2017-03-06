@@ -14,12 +14,22 @@ MainWidget::MainWidget(std::string mdl_file, QWidget *parent) :
     translationSpeed(0.005),
     scale(1),
     translation(0, 0, -5),
-    model_file(mdl_file)
+    model_file(mdl_file),
+    lightColor(Qt::white),
+    modelColor(Qt::white)
 {    
     openAct = new QAction(tr("&Open"), this);
     openAct->setShortcuts(QKeySequence::Open);
     openAct->setStatusTip(tr("Open model file"));
     connect(openAct, &QAction::triggered, this, &MainWidget::openModelDialog);
+
+    lightColorAct = new QAction(tr("&Light Color"), this);
+    lightColorAct->setStatusTip(tr("Set Light Color"));
+    connect(lightColorAct, SIGNAL(triggered()), this, SLOT(lightColorDialog()));
+
+    modelColorAct = new QAction(tr("&Model Color"), this);
+    modelColorAct->setStatusTip(tr("Set Model Color"));
+    connect(modelColorAct, SIGNAL(triggered()), this, SLOT(modelColorDialog()));
 
     exitAct = new QAction(tr("&Exit"), this);
     exitAct->setShortcuts(QKeySequence::Quit);
@@ -28,6 +38,8 @@ MainWidget::MainWidget(std::string mdl_file, QWidget *parent) :
 
     fileMenu = menuBar->addMenu(tr("&File"));
     fileMenu->addAction(openAct);
+    fileMenu->addAction(lightColorAct);
+    fileMenu->addAction(modelColorAct);
     fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
 
@@ -138,6 +150,21 @@ void MainWidget::wheelEvent(QWheelEvent* e)
     update();
 }
 
+void MainWidget::timerEvent(QTimerEvent *)
+{
+    //update();
+}
+
+void MainWidget::contextMenuEvent(QContextMenuEvent *event)
+{
+    /*QMenu menu(this);
+    menu.addAction(openAct);
+    menu.addAction(exitAct);
+    menu.exec(event->globalPos());*/
+}
+
+
+
 void MainWidget::openModelDialog()
 {
     QStringList fileNames = QFileDialog::getOpenFileNames(this, tr("Open File"),"/data/",tr("Wavefront Model Files (*.obj)"));
@@ -154,22 +181,16 @@ void MainWidget::openModelDialog()
     }
 }
 
+void MainWidget::lightColorDialog()
+{
+    QColorDialog* cd = new QColorDialog(this);
+    lightColor = cd->getColor(Qt::white, this, "Choose light color");
+}
+
 void MainWidget::modelColorDialog()
 {
-    //modelColor;
-}
-
-void MainWidget::timerEvent(QTimerEvent *)
-{
-    //update();
-}
-
-void MainWidget::contextMenuEvent(QContextMenuEvent *event)
-{
-    /*QMenu menu(this);
-    menu.addAction(openAct);
-    menu.addAction(exitAct);
-    menu.exec(event->globalPos());*/
+    QColorDialog* cd = new QColorDialog(this);
+    modelColor = cd->getColor(Qt::white, this, "Choose model color");
 }
 
 void MainWidget::initializeGL()
@@ -241,7 +262,10 @@ void MainWidget::paintGL()
     program.setUniformValue("m_model_view", modelView);
     program.setUniformValue("mvp_matrix", projection * modelView);
     program.setUniformValue("lightPos", QVector3D(0., 0., -1.));
-    program.setUniformValue("lightColor", QVector4D(1., 1., 1., 1.));
+    program.setUniformValue("lightColor", QVector4D(lightColor.redF(), lightColor.greenF(), lightColor.blueF(), 1.));
+    program.setUniformValue("modelColor", QVector4D(modelColor.redF(), modelColor.greenF(), modelColor.blueF(), 1.));
+    //program.setUniformValue("lightColor", QVector4D(1., 1., 1., 1.));
+
 
     // Use texture unit 0 which contains cube.png
     //program.setUniformValue("texture", 0);

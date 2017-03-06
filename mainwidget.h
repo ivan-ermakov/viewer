@@ -47,12 +47,15 @@ protected:
 
 public slots:
     void openModelDialog();
+    void lightColorDialog();
     void modelColorDialog();
 
 private:
     QMenuBar* menuBar;
     QMenu* fileMenu;
     QAction* openAct;
+    QAction* modelColorAct;
+    QAction* lightColorAct;
     QAction* exitAct;
 
     QBasicTimer timer;
