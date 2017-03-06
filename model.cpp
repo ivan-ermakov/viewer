@@ -40,11 +40,13 @@ void Model::loadObj(QString filename)
     modelFile = filename;
 
     progress = new QProgressDialog("Loading model...", "Abort", 0, 100, nullptr);
+    progress->show();
 
     ModelLoader* mdlLoadThread = new ModelLoader(this);
-    mdlLoadThread->setPriority(QThread::HighPriority);
+    //mdlLoadThread->setPriority(QThread::HighPriority);
     connect(mdlLoadThread, &ModelLoader::setProgress, progress, &QProgressDialog::setValue);
     connect(mdlLoadThread, &ModelLoader::setMaxProgress, progress, &QProgressDialog::setMaximum);
+    connect(progress, &QProgressDialog::canceled, mdlLoadThread, &ModelLoader::cancel);
     mdlLoadThread->connect(mdlLoadThread, &ModelLoader::resultReady, this, &Model::handleResults);
     mdlLoadThread->connect(mdlLoadThread, &ModelLoader::finished, progress, &QObject::deleteLater);
     mdlLoadThread->connect(mdlLoadThread, &ModelLoader::finished, mdlLoadThread, &QObject::deleteLater);
@@ -64,7 +66,8 @@ void Model::handleResults(std::vector<Vertex> vdata, std::vector<GLuint> indices
 
 void Model::draw(QOpenGLShaderProgram *program)
 {
-    QMutexLocker lck(&mutex);
+    if (!mutex.tryLock())
+        return;
 
     // Tell OpenGL which VBOs to use
     arrayBuf.bind();
@@ -86,4 +89,6 @@ void Model::draw(QOpenGLShaderProgram *program)
 
     // Draw cube geometry using indices from VBO 1
     glDrawElements(GL_TRIANGLES, bufSize, GL_UNSIGNED_INT, 0);
+
+    mutex.unlock();
 }

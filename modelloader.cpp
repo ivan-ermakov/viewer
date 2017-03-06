@@ -35,6 +35,12 @@ ModelLoader::ModelLoader(Model* mdl_ = 0) :
     QThread(mdl_)
 {
     mdl = mdl_;
+    cancelled = false;
+}
+
+void ModelLoader::cancel()
+{
+    cancelled = true;
 }
 
 void ModelLoader::run()
@@ -53,6 +59,7 @@ void ModelLoader::run()
         return;
     }
 
+    int last_progress = 0;
     std::size_t size;
     in.seekg(0, std::ios::end);
     size = in.tellg();
@@ -174,10 +181,14 @@ void ModelLoader::run()
         }
 
         //mdl->progress->setValue(in.tellg());
-        setProgress(in.tellg());
+        if (in.tellg() * 100 / size > last_progress * 100 / size)
+        {
+            last_progress = in.tellg();
+            setProgress(last_progress);
+        }
 
-        /*if (mdl->progress->wasCanceled())
-            return;*/
+        if (cancelled)
+            return;
     }
 
     if (precomputedNormals)

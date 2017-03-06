@@ -22,7 +22,10 @@ private:
     void run() override;
 
     Model* mdl;
-    //QString modelFile;
+    bool cancelled;
+
+public slots:
+    void cancel();
 
 signals:
     void setProgress(int);
