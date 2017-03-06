@@ -4,14 +4,17 @@ TARGET = viewer
 TEMPLATE = app
 
 SOURCES += main.cpp \
-    model.cpp
+    model.cpp \
+    modelloader.cpp
 
 SOURCES += \
     mainwidget.cpp
 
 HEADERS += \
     mainwidget.h \
-    model.h
+    model.h \
+    modelloader.h \
+    vertex.h
 
 RESOURCES += \
     shaders.qrc

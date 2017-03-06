@@ -9,12 +9,11 @@
 MainWidget::MainWidget(std::string mdl_file, QWidget *parent) :
     QOpenGLWidget(parent),
     menuBar(new QMenuBar(this)),
-    geometries(0),
+    geometries(nullptr),
     angularSpeed(0),
     translationSpeed(0.005),
     scale(1),
     translation(0, 0, -5),
-    model_file(mdl_file),
     lightColor(Qt::white),
     modelColor(Qt::white)
 {    
@@ -42,24 +41,6 @@ MainWidget::MainWidget(std::string mdl_file, QWidget *parent) :
     fileMenu->addAction(modelColorAct);
     fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
-
-    //menuBar->addMenu(fileMenu);
-
-    /*rotateButton = new QPushButton("Rotate", this);
-    rotateButton->setGeometry(QRect(QPoint(10, 10), QSize(80, 25)));
-    connect(rotateButton, SIGNAL (released()), this, SLOT (handleRotateButton()));
-
-    moveButton = new QPushButton("Move", this);
-    moveButton->setGeometry(QRect(QPoint(90, 10), QSize(80, 25)));
-    connect(moveButton, SIGNAL (released()), this, SLOT (handleMoveButton()));
-
-    scaleButton = new QPushButton("Scale", this);
-    scaleButton->setGeometry(QRect(QPoint(170, 10), QSize(80, 25)));
-    connect(scaleButton, SIGNAL (released()), this, SLOT (handleScaleButton()));
-
-    modelButton = new QPushButton("Model", this);
-    modelButton->setGeometry(QRect(QPoint(250, 10), QSize(80, 25)));
-    connect(modelButton, SIGNAL (released()), this, SLOT (handleModelButton()));*/
 }
 
 MainWidget::~MainWidget()
@@ -152,31 +133,25 @@ void MainWidget::wheelEvent(QWheelEvent* e)
 
 void MainWidget::timerEvent(QTimerEvent *)
 {
-    //update();
 }
 
 void MainWidget::contextMenuEvent(QContextMenuEvent *event)
 {
-    /*QMenu menu(this);
-    menu.addAction(openAct);
-    menu.addAction(exitAct);
-    menu.exec(event->globalPos());*/
 }
-
-
 
 void MainWidget::openModelDialog()
 {
     QStringList fileNames = QFileDialog::getOpenFileNames(this, tr("Open File"),"/data/",tr("Wavefront Model Files (*.obj)"));
+    QString modelFile(geometries->modelFile);
 
     if (!fileNames.empty())
     {
-        if (model_file != fileNames.first().toStdString())
+        if (modelFile != fileNames.first())
         {
-            model_file = fileNames.first().toStdString();
+            modelFile = fileNames.first();
             delete geometries;
             geometries = nullptr;
-            geometries = new Model(model_file);
+            geometries = new Model(modelFile);
         }
     }
 }
@@ -184,13 +159,13 @@ void MainWidget::openModelDialog()
 void MainWidget::lightColorDialog()
 {
     QColorDialog* cd = new QColorDialog(this);
-    lightColor = cd->getColor(Qt::white, this, "Choose light color");
+    lightColor = cd->getColor(lightColor, this, "Choose light color");
 }
 
 void MainWidget::modelColorDialog()
 {
     QColorDialog* cd = new QColorDialog(this);
-    modelColor = cd->getColor(Qt::white, this, "Choose model color");
+    modelColor = cd->getColor(modelColor, this, "Choose model color");
 }
 
 void MainWidget::initializeGL()
@@ -221,7 +196,7 @@ void MainWidget::initializeGL()
     //glEnable(GL_CULL_FACE); // Enable back face culling
     //glDisable(GL_CULL_FACE);
 
-    geometries = new Model(model_file);
+    geometries = new Model("data/f-16.obj");
 
     // Use QBasicTimer because its faster than QTimer
     timer.start(12, this);

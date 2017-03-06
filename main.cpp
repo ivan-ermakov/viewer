@@ -17,8 +17,11 @@ int main(int argc, char *argv[])
     app.setApplicationName("Viewer");
     app.setApplicationVersion("1.0");
 
+    qRegisterMetaType<std::vector<Vertex>>("std::vector<Vertex>");
+    qRegisterMetaType<std::vector<GLuint>>("std::vector<GLuint>");
+
 #ifndef QT_NO_OPENGL
-    MainWidget widget(argc > 1 ? argv[1] : "data/f16.obj");
+    MainWidget widget(argc > 1 ? argv[1] : "data/f-16.obj");
     widget.setGeometry(QRect(50, 50, 1024, 768));
     widget.show();
 #else

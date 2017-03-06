@@ -61,7 +61,6 @@ private:
     QBasicTimer timer;
     QOpenGLShaderProgram program;
     Model* geometries;
-    std::string model_file;
     //QOpenGLTexture *texture;
 
     QMatrix4x4 modelView;
