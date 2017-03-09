@@ -11,6 +11,7 @@
 #include <QMutexLocker>
 #include <QProgressDialog>
 
+// Treat / as whitespace
 struct Ctype: std::ctype<char>
 {
     Ctype(): std::ctype<char>(get_table()) {}
@@ -25,17 +26,46 @@ struct Ctype: std::ctype<char>
 
         rc['/'] = std::ctype_base::space;
         rc[' '] = std::ctype_base::space;
-        return &rc[0];
+        return rc;
     }
 };
 
+ModelLoader::ModelLoader() :
+    QThread(),
+    progress(0),
+    ready(false),
+    cancelled(false),
+    mdl(nullptr)
+{}
 
+ModelLoader::ModelLoader(Model* mdl_, QString fname) :
+    QThread(),
+    progress(0),
+    ready(false),
+    cancelled(false),
+    fileName(fname),
+    mdl(mdl_),
+    mtx(new QMutex())
+{}
 
-ModelLoader::ModelLoader(Model* mdl_ = 0) :
-    QThread(mdl_)
+ModelLoader::~ModelLoader()
+{}
+
+bool ModelLoader::isReady() const
 {
-    mdl = mdl_;
-    cancelled = false;
+    return ready;
+}
+
+int ModelLoader::getProgress() const
+{
+    QMutexLocker lck(mtx);
+    return progress;
+}
+
+int ModelLoader::getMaxProgress() const
+{
+    QMutexLocker lck(mtx);
+    return maxProgress;
 }
 
 void ModelLoader::cancel()
@@ -43,29 +73,44 @@ void ModelLoader::cancel()
     cancelled = true;
 }
 
+void ModelLoader::read()
+{
+    if (ready)
+    {
+        //mdl->load(std::move(vdata), std::move(indices));
+
+        mdl->arrayBuf.bind();
+        mdl->arrayBuf.allocate(vdata.data(), (int)vdata.size() * sizeof(Vertex));
+
+        mdl->indexBuf.bind();
+        mdl->indexBuf.allocate(indices.data(), (int)indices.size() * sizeof(GLuint));
+
+        mdl->bufSize = indices.size();
+    }
+}
+
 void ModelLoader::run()
 {
     QMutexLocker lck(&(mdl->mutex));
     std::vector<QVector3D> faceNormals;
-    std::vector<Vertex> vdata;
-    std::vector<GLuint> indices;
     mdl->pivot = QVector3D(0, 0, 0);
-    mdl->modelFile;
 
-    std::ifstream in(mdl->modelFile.toStdString(), std::ios::in);
+    std::ifstream in(fileName.toStdString(), std::ios::in);
     if (!in)
     {
-        std::cerr << "Cannot open " << mdl->modelFile.toStdString() << std::endl;
+        std::cerr << "Cannot open " << fileName.toStdString() << std::endl;
         return;
     }
 
-    int last_progress = 0;
-    std::size_t size;
-    in.seekg(0, std::ios::end);
-    size = in.tellg();
-    in.seekg(0, std::ios::beg);
+    mtx->lock();
+    progress = 0;
 
-    setMaxProgress(size);
+    in.seekg(0, std::ios::end);
+    maxProgress = in.tellg();
+    in.seekg(0, std::ios::beg);
+    mtx->unlock();
+
+    //setMaxProgress(maxProgress);
     //mdl->progress->setMaximum(size);
 
     bool precomputedNormals = false;
@@ -108,9 +153,9 @@ void ModelLoader::run()
                  return;
              }
 
-             if (a < 0)
-                 a = vdata.length() + a;
-             else
+             /*if (a < 0)
+                 a = vdata.size() + a;
+             else*/
                  --a;
 
              //std::cout << s << "\t" << a << "/" << n << "\t";
@@ -124,11 +169,23 @@ void ModelLoader::run()
                  std::cerr << "ERROR: invalid model file.\n";
                  return;
              }
+
+             /*if (b < 0)
+                 b = vdata.size() + b;
+             else*/
+                 --b;
+
              //std::cout << b << "/" << n2 << "\t";
 
              ss >> c;
              if (texturePresent) ss >> n3;
              if (precomputedNormals) ss >> n3;
+
+             /*if (c < 0)
+                 c = vdata.size() + c;
+             else*/
+                 --c;
+
              //std::cout << c << "/" << n3 << "\n";
 
              if (ss.fail())
@@ -145,11 +202,16 @@ void ModelLoader::run()
 
                  if (texturePresent) ss >> n4;
                  if (precomputedNormals) ss >> n4;
+
+                 /*if (d < 0)
+                     d = vdata.size() + d;
+                 else*/
+                     --d;
              }
 
              indices.push_back(a);
-             indices.push_back(--b);
-             indices.push_back(--c);
+             indices.push_back(b);
+             indices.push_back(c);
 
              vdata[a].norm += faceNormals[--n];
              vdata[b].norm += faceNormals[--n2];
@@ -159,7 +221,7 @@ void ModelLoader::run()
             {
                 indices.push_back(a);
                 indices.push_back(c);
-                indices.push_back(--d);
+                indices.push_back(d);
 
                 vdata[d].norm += faceNormals[--n4];
 
@@ -184,17 +246,13 @@ void ModelLoader::run()
             precomputedNormals = false;
             texturePresent = false;
         }
-        else
-        {
-            std::cout << "Unknown line: " << s;
-        }
+        /*else
+            std::cout << "Unknown line: " << s << "\n";*/
 
         //mdl->progress->setValue(in.tellg());
-        if (in.tellg() * 100 / size > last_progress * 100 / size)
-        {
-            last_progress = in.tellg();
-            setProgress(last_progress);
-        }
+        mtx->lock();
+        progress = in.tellg();
+        mtx->unlock();
 
         if (cancelled)
             return;
@@ -209,11 +267,7 @@ void ModelLoader::run()
     mdl->pivot /= vdata.size();
     mdl->bufSize = (int)indices.size();
 
-    emit resultReady(std::move(vdata), std::move(indices));
+    ready = true;
 
-    /*mdl->arrayBuf.bind();
-    mdl->arrayBuf.allocate(vdata.data(), (int)vdata.size() * sizeof(Vertex));
-
-    mdl->indexBuf.bind();
-    mdl->indexBuf.allocate(indices.data(), (int)indices.size() * sizeof(GLuint));*/
+    //emit resultReady(std::move(vdata), std::move(indices));
 }

@@ -1,10 +1,11 @@
-#include "mainwidget.h"
+#include <cmath>
 
 #include <QMouseEvent>
 #include <QFileDialog>
 #include <QColorDialog>
 
-#include <math.h>
+#include "mainwidget.h"
+#include "modelloaddialog.h"
 
 MainWidget::MainWidget(std::string mdl_file, QWidget *parent) :
     QOpenGLWidget(parent),
@@ -132,27 +133,26 @@ void MainWidget::wheelEvent(QWheelEvent* e)
 }
 
 void MainWidget::timerEvent(QTimerEvent *)
-{
-}
+{}
 
 void MainWidget::contextMenuEvent(QContextMenuEvent *event)
-{
-}
+{}
 
 void MainWidget::openModelDialog()
 {
     QStringList fileNames = QFileDialog::getOpenFileNames(this, tr("Open File"),"/data/",tr("Wavefront Model Files (*.obj)"));
-    QString modelFile(geometries->modelFile);
+    //QString modelFile(geometries->modelFile);
 
     if (!fileNames.empty())
     {
-        if (modelFile != fileNames.first())
+        /*if (modelFile != fileNames.first())
         {
-            modelFile = fileNames.first();
+            modelFile = fileNames.first();*/
             delete geometries;
             geometries = nullptr;
-            geometries = new Model(modelFile);
-        }
+            geometries = new Model();
+            delete new ModelLoadDialog(this, geometries, fileNames.first());
+        //}
     }
 }
 
@@ -196,7 +196,7 @@ void MainWidget::initializeGL()
     //glEnable(GL_CULL_FACE); // Enable back face culling
     //glDisable(GL_CULL_FACE);
 
-    geometries = new Model("data/f-16.obj");
+    geometries = new Model();
 
     // Use QBasicTimer because its faster than QTimer
     timer.start(12, this);

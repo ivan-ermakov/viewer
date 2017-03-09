@@ -1,35 +1,50 @@
 #ifndef MODELLOADER_H
 #define MODELLOADER_H
 
+#include <QTimer>
 #include <QString>
 #include <QVector2D>
 #include <QVector3D>
+#include <QMutex>
 #include <QThread>
+#include <QOpenGLFunctions>
 
 #include "model.h"
 #include "vertex.h"
 
-class ModelLoader : public QThread
+// Widget + Thread
+
+class ModelLoader : public QThread, public QOpenGLFunctions
 {
     Q_OBJECT
 
 public:
+    ModelLoader();
+    ModelLoader(Model*, QString);
+    ~ModelLoader();
 
-    ModelLoader(Model*);
+    bool isReady() const;
+    int getProgress() const;
+    int getMaxProgress() const;
+    void cancel();
+    //void read(Model*);
+    void read();
+    //void exec();
 
 private:
-
     void run() override;
 
-    Model* mdl;
+    bool ready;
     bool cancelled;
-
-public slots:
-    void cancel();
+    int progress;
+    int maxProgress;
+    QString fileName;
+    Model* mdl;
+    QMutex* mtx;
+    std::vector<Vertex> vdata;
+    std::vector<GLuint> indices;
 
 signals:
-    void setProgress(int);
-    void setMaxProgress(int);
     void resultReady(std::vector<Vertex> vdata, std::vector<GLuint> indices);
 };
 

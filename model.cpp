@@ -1,5 +1,4 @@
 #include "model.h"
-#include "modelloader.h"
 
 #include <string>
 #include <vector>
@@ -23,37 +22,13 @@ Model::Model()
     indexBuf.create();
 }
 
-Model::Model(QString file)
-    : Model()
-{
-    loadObj(file);
-}
-
 Model::~Model()
 {
     arrayBuf.destroy();
     indexBuf.destroy();
 }
 
-void Model::loadObj(QString filename)
-{
-    modelFile = filename;
-
-    progress = new QProgressDialog("Loading model...", "Abort", 0, 100, nullptr);
-    progress->show();
-
-    ModelLoader* mdlLoadThread = new ModelLoader(this);
-    //mdlLoadThread->setPriority(QThread::HighPriority);
-    connect(mdlLoadThread, &ModelLoader::setProgress, progress, &QProgressDialog::setValue);
-    connect(mdlLoadThread, &ModelLoader::setMaxProgress, progress, &QProgressDialog::setMaximum);
-    connect(progress, &QProgressDialog::canceled, mdlLoadThread, &ModelLoader::cancel);
-    mdlLoadThread->connect(mdlLoadThread, &ModelLoader::resultReady, this, &Model::handleResults);
-    mdlLoadThread->connect(mdlLoadThread, &ModelLoader::finished, progress, &QObject::deleteLater);
-    mdlLoadThread->connect(mdlLoadThread, &ModelLoader::finished, mdlLoadThread, &QObject::deleteLater);
-    mdlLoadThread->start();
-}
-
-void Model::handleResults(std::vector<Vertex> vdata, std::vector<GLuint> indices)
+/*void Model::load(std::vector<Vertex> vdata, std::vector<GLuint> indices)
 {
     arrayBuf.bind();
     arrayBuf.allocate(vdata.data(), (int)vdata.size() * sizeof(Vertex));
@@ -61,8 +36,8 @@ void Model::handleResults(std::vector<Vertex> vdata, std::vector<GLuint> indices
     indexBuf.bind();
     indexBuf.allocate(indices.data(), (int)indices.size() * sizeof(GLuint));
 
-    progress = nullptr;
-}
+    bufSize = indices.size();
+}*/
 
 void Model::draw(QOpenGLShaderProgram *program)
 {

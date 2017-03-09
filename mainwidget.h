@@ -25,6 +25,8 @@ enum class Tool
     Scale
 };
 
+// QMainWindow + Renderer
+
 class MainWidget : public QOpenGLWidget, public QOpenGLFunctions_4_5_Core
 {
     Q_OBJECT
