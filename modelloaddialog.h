@@ -13,12 +13,17 @@ class ModelLoadDialog : public QWidget
     Q_OBJECT
 
 public:
-    ModelLoadDialog(QWidget*, Model*, QString);
+    ModelLoadDialog(QWidget*, QString);
+
+    bool isReady();
+    const std::vector<Vertex>& getVertices();
+    const std::vector<GLuint>& getIndices();
+    QVector3D getPivot();
+    void read(Model* mdl);
 
     void exec();
 
 private:
-
     QTimer* timer;
     QProgressDialog* progress;
     ModelLoader* mdlLoader;

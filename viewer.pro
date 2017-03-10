@@ -1,4 +1,4 @@
-QT       += core gui widgets
+QT       += core gui widgets opengl
 
 TARGET = viewer
 TEMPLATE = app
@@ -19,6 +19,8 @@ HEADERS += \
     modelloaddialog.h \
     mainwindow.h \
     renderer.h
+
+LIBS += -lopengl32
 
 RESOURCES += \
     shaders.qrc

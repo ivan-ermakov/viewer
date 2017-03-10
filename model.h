@@ -1,39 +1,35 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include <string>
 #include <vector>
 
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
-#include <QString>
 #include <QMutex>
 
 #include "vertex.h"
 
-// Clean up
-
-class Model : public QObject, protected QOpenGLFunctions
+class Model : public QObject
 {
-   Q_OBJECT
+    Q_OBJECT
+
+    friend class ModelLoader;
 
 public:
     Model();
-    virtual ~Model();
+    ~Model();
 
     void draw(QOpenGLShaderProgram *program);
-    void load(std::vector<Vertex>&, std::vector<GLuint>&);
+    void load(const std::vector<Vertex>&, const std::vector<GLuint>&, QVector3D);
 
     QVector3D pivot;
-    QMutex mutex;
-
-    friend class ModelLoader;
 
 private:
     int bufSize;
     QOpenGLBuffer arrayBuf;
     QOpenGLBuffer indexBuf;
+    QMutex mutex;
 };
 
 #endif // MODEL_H

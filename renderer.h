@@ -21,7 +21,7 @@ public:
     explicit Renderer(QWidget *parent = 0);
     ~Renderer();
 
-    void setModelFile(QString);
+    void loadModel(QString);
     void setLightColor(QColor);
     void setModelColor(QColor);
 

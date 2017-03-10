@@ -14,23 +14,24 @@
 
 // Widget + Thread
 
-class ModelLoader : public QThread, public QOpenGLFunctions
+class ModelLoader : public QThread
 {
     Q_OBJECT
 
 public:
     ModelLoader();
-    ModelLoader(Model*, QString);
+    ModelLoader(QString);
     ~ModelLoader();
 
-    bool isReady() const;
-    bool isCancelled() const;
-    int getProgress() const;
-    int getMaxProgress() const;
+    bool isReady();
+    bool isCancelled();
+    int getProgress();
+    int getMaxProgress();
+    const std::vector<Vertex>& getVertices();
+    const std::vector<GLuint>& getIndices();
+    QVector3D getPivot();
     void cancel();
-    //void read(Model*);
-    void read();
-    //void exec();
+    void read(Model*);
 
 private:
     void run() override;
@@ -40,13 +41,13 @@ private:
     int progress;
     int maxProgress;
     QString fileName;
-    Model* mdl;
     QMutex* mtx;
-    std::vector<Vertex> vdata;
+    std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
+    QVector3D pivot;
 
 signals:
-    void resultReady(std::vector<Vertex> vdata, std::vector<GLuint> indices);
+    void resultReady(std::vector<Vertex> vertices, std::vector<GLuint> indices);
 };
 
 #endif // MODELLOADER_H

@@ -9,7 +9,6 @@
 
 Renderer::Renderer(QWidget *parent) :
     QOpenGLWidget(parent),
-    //menuBar(new QMenuBar(this)),
     mdl(nullptr),
     angularSpeed(0),
     translationSpeed(0.005),
@@ -30,12 +29,20 @@ Renderer::~Renderer()
     doneCurrent();
 }
 
-void Renderer::setModelFile(QString fileName)
+void Renderer::loadModel(QString fileName)
 {
     mdl = nullptr;
-    mdl = new Model();
-    ModelLoadDialog* mld = new ModelLoadDialog(this, mdl, fileName);
+
+    ModelLoadDialog* mld = new ModelLoadDialog(this, fileName);
     mld->exec();
+
+    if (mld->isReady())
+    {
+        mdl = new Model();
+        mld->read(mdl);
+    }
+
+    //delete mld; deleteLater
 }
 
 void Renderer::setLightColor(QColor c)
@@ -152,8 +159,6 @@ void Renderer::initializeGL()
     glEnable(GL_DEPTH_TEST); // Enable depth buffer
     glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
-    //glEnable(GL_CULL_FACE); // Enable back face culling
-    //glDisable(GL_CULL_FACE);
 
     mdl = new Model();
 
@@ -181,6 +186,9 @@ void Renderer::paintGL()
     // Clear color and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    if (!mdl)
+        return;
+
     // Calculate model view transformation
     modelView.setToIdentity();
     /*modelView.translate(translation);
@@ -198,13 +206,11 @@ void Renderer::paintGL()
     program.setUniformValue("lightPos", QVector3D(0., 0., -1.));
     program.setUniformValue("lightColor", QVector4D(lightColor.redF(), lightColor.greenF(), lightColor.blueF(), 1.));
     program.setUniformValue("modelColor", QVector4D(modelColor.redF(), modelColor.greenF(), modelColor.blueF(), 1.));
-    //program.setUniformValue("lightColor", QVector4D(1., 1., 1., 1.));
 
 
     // Use texture unit 0 which contains cube.png
     //program.setUniformValue("texture", 0);
 
     // Draw
-    if (mdl)
-        mdl->draw(&program);
+    mdl->draw(&program);
 }

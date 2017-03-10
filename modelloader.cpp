@@ -9,7 +9,6 @@
 #include <locale>
 
 #include <QMutexLocker>
-#include <QProgressDialog>
 
 // Treat / as whitespace
 struct Ctype: std::ctype<char>
@@ -35,17 +34,15 @@ ModelLoader::ModelLoader() :
     progress(0),
     ready(false),
     cancelled(false),
-    mdl(nullptr),
     mtx(nullptr)
 {}
 
-ModelLoader::ModelLoader(Model* mdl_, QString fname) :
+ModelLoader::ModelLoader(QString fname) :
     QThread(),
     progress(0),
     ready(false),
     cancelled(false),
     fileName(fname),
-    mdl(mdl_),
     mtx(new QMutex())
 {}
 
@@ -55,26 +52,41 @@ ModelLoader::~ModelLoader()
         delete mtx;
 }
 
-bool ModelLoader::isCancelled() const
+bool ModelLoader::isCancelled()
 {
     return cancelled;
 }
 
-bool ModelLoader::isReady() const
+bool ModelLoader::isReady()
 {
     return ready;
 }
 
-int ModelLoader::getProgress() const
+int ModelLoader::getProgress()
 {
     QMutexLocker lck(mtx);
     return progress;
 }
 
-int ModelLoader::getMaxProgress() const
+int ModelLoader::getMaxProgress()
 {
     QMutexLocker lck(mtx);
     return maxProgress;
+}
+
+const std::vector<Vertex>& ModelLoader::getVertices()
+{
+    return vertices;
+}
+
+const std::vector<GLuint>& ModelLoader::getIndices()
+{
+    return indices;
+}
+
+QVector3D ModelLoader::getPivot()
+{
+    return pivot;
 }
 
 void ModelLoader::cancel()
@@ -82,19 +94,19 @@ void ModelLoader::cancel()
     cancelled = true;
 }
 
-void ModelLoader::read()
+void ModelLoader::read(Model* mdl)
 {
     if (ready)
     {
-        mdl->load(std::move(vdata), std::move(indices));
+        QMutexLocker lck(&(mdl->mutex));
+        mdl->load(vertices, indices, pivot);
     }
 }
 
 void ModelLoader::run()
 {
-    QMutexLocker lck(&(mdl->mutex));
     std::vector<QVector3D> faceNormals;
-    mdl->pivot = QVector3D(0, 0, 0);
+    pivot = QVector3D(0, 0, 0);
 
     std::ifstream in(fileName.toStdString(), std::ios::in);
     if (!in)
@@ -110,9 +122,6 @@ void ModelLoader::run()
     maxProgress = in.tellg();
     in.seekg(0, std::ios::beg);
     mtx->unlock();
-
-    //setMaxProgress(maxProgress);
-    //mdl->progress->setMaximum(size);
 
     bool precomputedNormals = false;
     bool texturePresent = false;
@@ -138,9 +147,9 @@ void ModelLoader::run()
             ss >> x >> y >> z;
 
             vtx.pos.setX(x); vtx.pos.setY(y); vtx.pos.setZ(z);
-            vdata.push_back(vtx);
+            vertices.push_back(vtx);
 
-            mdl->pivot += vtx.pos;
+            pivot += vtx.pos;
         }
         else if (line == "f")
         {
@@ -155,11 +164,9 @@ void ModelLoader::run()
              }
 
              if (a < 0)
-                 a = vdata.size() + a;
+                 a = vertices.size() + a;
              else
                  --a;
-
-             //std::cout << s << "\t" << a << "/" << n << "\t";
 
              ss >> b;
              if (texturePresent) ss >> n2;
@@ -172,22 +179,18 @@ void ModelLoader::run()
              }
 
              if (b < 0)
-                 b = vdata.size() + b;
+                 b = vertices.size() + b;
              else
                  --b;
-
-             //std::cout << b << "/" << n2 << "\t";
 
              ss >> c;
              if (texturePresent) ss >> n3;
              if (precomputedNormals) ss >> n3;
 
              if (c < 0)
-                 c = vdata.size() + c;
+                 c = vertices.size() + c;
              else
                  --c;
-
-             //std::cout << c << "/" << n3 << "\n";
 
              if (ss.fail())
              {
@@ -205,7 +208,7 @@ void ModelLoader::run()
                  if (precomputedNormals) ss >> n4;
 
                  if (d < 0)
-                     d = vdata.size() + d;
+                     d = vertices.size() + d;
                  else
                      --d;
              }
@@ -214,9 +217,9 @@ void ModelLoader::run()
              indices.push_back(b);
              indices.push_back(c);
 
-             vdata[a].norm += faceNormals[--n];
-             vdata[b].norm += faceNormals[--n2];
-             vdata[c].norm += faceNormals[--n3];
+             vertices[a].norm += faceNormals[--n];
+             vertices[b].norm += faceNormals[--n2];
+             vertices[c].norm += faceNormals[--n3];
 
             if (perFace == 4)
             {
@@ -224,7 +227,7 @@ void ModelLoader::run()
                 indices.push_back(c);
                 indices.push_back(d);
 
-                vdata[d].norm += faceNormals[--n4];
+                vertices[d].norm += faceNormals[--n4];
 
                 perFace = 3;
             }
@@ -250,7 +253,6 @@ void ModelLoader::run()
         /*else
             std::cout << "Unknown line: " << s << "\n";*/
 
-        //mdl->progress->setValue(in.tellg());
         mtx->lock();
         progress = in.tellg();
         mtx->unlock();
@@ -261,14 +263,11 @@ void ModelLoader::run()
 
     if (precomputedNormals)
     {
-        for (int i = 0; i < (int)vdata.size(); ++i)
-            vdata[i].norm.normalize();
+        for (int i = 0; i < (int)vertices.size(); ++i)
+            vertices[i].norm.normalize();
     }
 
-    mdl->pivot /= vdata.size();
-    mdl->bufSize = (int)indices.size();
+    pivot /= vertices.size();
 
     ready = true;
-
-    //emit resultReady(std::move(vdata), std::move(indices));
 }

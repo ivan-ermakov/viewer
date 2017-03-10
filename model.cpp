@@ -16,8 +16,6 @@
 Model::Model()
     : indexBuf(QOpenGLBuffer::IndexBuffer)
 {
-    initializeOpenGLFunctions();
-
     arrayBuf.create();
     indexBuf.create();
 }
@@ -28,7 +26,7 @@ Model::~Model()
     indexBuf.destroy();
 }
 
-void Model::load(std::vector<Vertex>& vdata, std::vector<GLuint>& indices)
+void Model::load(const std::vector<Vertex>& vdata, const std::vector<GLuint>& indices, QVector3D pivot_)
 {
     arrayBuf.bind();
     arrayBuf.allocate(vdata.data(), (int)vdata.size() * sizeof(Vertex));
@@ -37,6 +35,8 @@ void Model::load(std::vector<Vertex>& vdata, std::vector<GLuint>& indices)
     indexBuf.allocate(indices.data(), (int)indices.size() * sizeof(GLuint));
 
     bufSize = indices.size();
+
+    pivot = pivot_;
 }
 
 void Model::draw(QOpenGLShaderProgram *program)

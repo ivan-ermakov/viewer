@@ -45,28 +45,22 @@ MainWindow::~MainWindow()
 
 void MainWindow::resizeEvent(QResizeEvent* event)
 {
+    // Maybe swap
     QMainWindow::resizeEvent(event);
     renderer->setGeometry(QRect(0, 0, geometry().width(), geometry().height()));
 }
 
 void MainWindow::openModelDialog()
 {
-    QStringList fileNames = QFileDialog::getOpenFileNames(this, tr("Open File"),"/data/",tr("Wavefront Model Files (*.obj)"));
-
-    if (!fileNames.empty())
-    {
-        renderer->setModelFile(fileNames.first());
-    }
+    renderer->loadModel(QFileDialog::getOpenFileName(this, tr("Open File"),"/data/",tr("Wavefront Model Files (*.obj)")));
 }
 
 void MainWindow::lightColorDialog()
 {
-    QColorDialog* cd = new QColorDialog(this);
-    renderer->setLightColor(cd->getColor(renderer->getLightColor(), this, "Choose light color"));
+    renderer->setLightColor(QColorDialog::getColor(renderer->getLightColor(), this, "Choose light color"));
 }
 
 void MainWindow::modelColorDialog()
 {
-    QColorDialog* cd = new QColorDialog(this);
-    renderer->setModelColor(cd->getColor(renderer->getModelColor(), this, "Choose model color"));
+    renderer->setModelColor(QColorDialog::getColor(renderer->getModelColor(), this, "Choose model color"));
 }

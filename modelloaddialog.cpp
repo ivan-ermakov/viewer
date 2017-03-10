@@ -2,13 +2,13 @@
 
 #include "modelloaddialog.h"
 
-ModelLoadDialog::ModelLoadDialog(QWidget *parent, Model* mdl, QString fileName) :
+ModelLoadDialog::ModelLoadDialog(QWidget *parent, QString fileName) :
     QWidget(parent)
 {
     progress = new QProgressDialog("Loading model...", "Abort", 0, 200, this);
     progress->show();
 
-    mdlLoader = new ModelLoader(mdl, fileName);
+    mdlLoader = new ModelLoader(fileName);
     connect(progress, &QProgressDialog::canceled, mdlLoader, &ModelLoader::cancel);
     mdlLoader->start();
 
@@ -17,6 +17,31 @@ ModelLoadDialog::ModelLoadDialog(QWidget *parent, Model* mdl, QString fileName) 
     timer->start(25);
 
     //progress->setMaximum(mdlLoader->getMaxProgress()); Too early
+}
+
+bool ModelLoadDialog::isReady()
+{
+    return mdlLoader->isReady();
+}
+
+const std::vector<Vertex>& ModelLoadDialog::getVertices()
+{
+    return mdlLoader->getVertices();
+}
+
+const std::vector<GLuint>& ModelLoadDialog::getIndices()
+{
+    return mdlLoader->getIndices();
+}
+
+QVector3D ModelLoadDialog::getPivot()
+{
+    return mdlLoader->getPivot();
+}
+
+void ModelLoadDialog::read(Model* mdl)
+{
+    mdlLoader->read(mdl);
 }
 
 void ModelLoadDialog::exec()
@@ -32,8 +57,6 @@ void ModelLoadDialog::update()
     if (mdlLoader->isReady() || mdlLoader->isCancelled())
     {
         timer->stop();
-
-        mdlLoader->read();
 
         timer->deleteLater();
         progress->deleteLater();
