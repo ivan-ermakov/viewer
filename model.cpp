@@ -28,7 +28,7 @@ Model::~Model()
     indexBuf.destroy();
 }
 
-/*void Model::load(std::vector<Vertex> vdata, std::vector<GLuint> indices)
+void Model::load(std::vector<Vertex>& vdata, std::vector<GLuint>& indices)
 {
     arrayBuf.bind();
     arrayBuf.allocate(vdata.data(), (int)vdata.size() * sizeof(Vertex));
@@ -37,7 +37,7 @@ Model::~Model()
     indexBuf.allocate(indices.data(), (int)indices.size() * sizeof(GLuint));
 
     bufSize = indices.size();
-}*/
+}
 
 void Model::draw(QOpenGLShaderProgram *program)
 {

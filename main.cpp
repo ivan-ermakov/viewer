@@ -2,9 +2,8 @@
 #include <QLabel>
 #include <QSurfaceFormat>
 
-#ifndef QT_NO_OPENGL
-#include "mainwidget.h"
-#endif
+#include "mainwindow.h"
+#include "renderer.h"
 
 int main(int argc, char *argv[])
 {
@@ -21,9 +20,9 @@ int main(int argc, char *argv[])
     qRegisterMetaType<std::vector<GLuint>>("std::vector<GLuint>");
 
 #ifndef QT_NO_OPENGL
-    MainWidget widget(argc > 1 ? argv[1] : "data/f-16.obj");
-    widget.setGeometry(QRect(50, 50, 1024, 768));
-    widget.show();
+    MainWindow window;
+    window.setGeometry(QRect(50, 50, 1024, 768));
+    window.show();
 #else
     QLabel note("OpenGL Support required");
     note.show();

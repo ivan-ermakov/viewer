@@ -24,6 +24,7 @@ public:
     ~ModelLoader();
 
     bool isReady() const;
+    bool isCancelled() const;
     int getProgress() const;
     int getMaxProgress() const;
     void cancel();

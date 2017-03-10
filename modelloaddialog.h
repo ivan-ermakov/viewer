@@ -15,6 +15,8 @@ class ModelLoadDialog : public QWidget
 public:
     ModelLoadDialog(QWidget*, Model*, QString);
 
+    void exec();
+
 private:
 
     QTimer* timer;

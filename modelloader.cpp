@@ -35,7 +35,8 @@ ModelLoader::ModelLoader() :
     progress(0),
     ready(false),
     cancelled(false),
-    mdl(nullptr)
+    mdl(nullptr),
+    mtx(nullptr)
 {}
 
 ModelLoader::ModelLoader(Model* mdl_, QString fname) :
@@ -49,7 +50,15 @@ ModelLoader::ModelLoader(Model* mdl_, QString fname) :
 {}
 
 ModelLoader::~ModelLoader()
-{}
+{
+    if (mtx)
+        delete mtx;
+}
+
+bool ModelLoader::isCancelled() const
+{
+    return cancelled;
+}
 
 bool ModelLoader::isReady() const
 {
@@ -77,15 +86,7 @@ void ModelLoader::read()
 {
     if (ready)
     {
-        //mdl->load(std::move(vdata), std::move(indices));
-
-        mdl->arrayBuf.bind();
-        mdl->arrayBuf.allocate(vdata.data(), (int)vdata.size() * sizeof(Vertex));
-
-        mdl->indexBuf.bind();
-        mdl->indexBuf.allocate(indices.data(), (int)indices.size() * sizeof(GLuint));
-
-        mdl->bufSize = indices.size();
+        mdl->load(std::move(vdata), std::move(indices));
     }
 }
 
@@ -153,9 +154,9 @@ void ModelLoader::run()
                  return;
              }
 
-             /*if (a < 0)
+             if (a < 0)
                  a = vdata.size() + a;
-             else*/
+             else
                  --a;
 
              //std::cout << s << "\t" << a << "/" << n << "\t";
@@ -170,9 +171,9 @@ void ModelLoader::run()
                  return;
              }
 
-             /*if (b < 0)
+             if (b < 0)
                  b = vdata.size() + b;
-             else*/
+             else
                  --b;
 
              //std::cout << b << "/" << n2 << "\t";
@@ -181,9 +182,9 @@ void ModelLoader::run()
              if (texturePresent) ss >> n3;
              if (precomputedNormals) ss >> n3;
 
-             /*if (c < 0)
+             if (c < 0)
                  c = vdata.size() + c;
-             else*/
+             else
                  --c;
 
              //std::cout << c << "/" << n3 << "\n";
@@ -203,9 +204,9 @@ void ModelLoader::run()
                  if (texturePresent) ss >> n4;
                  if (precomputedNormals) ss >> n4;
 
-                 /*if (d < 0)
+                 if (d < 0)
                      d = vdata.size() + d;
-                 else*/
+                 else
                      --d;
              }
 

@@ -23,7 +23,7 @@ public:
     virtual ~Model();
 
     void draw(QOpenGLShaderProgram *program);
-    //void load(std::vector<Vertex>, std::vector<GLuint>);
+    void load(std::vector<Vertex>&, std::vector<GLuint>&);
 
     QVector3D pivot;
     QMutex mutex;

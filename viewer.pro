@@ -6,17 +6,19 @@ TEMPLATE = app
 SOURCES += main.cpp \
     model.cpp \
     modelloader.cpp \
-    modelloaddialog.cpp
+    modelloaddialog.cpp \
+    mainwindow.cpp \
+    renderer.cpp
 
-SOURCES += \
-    mainwidget.cpp
+SOURCES +=
 
 HEADERS += \
-    mainwidget.h \
     model.h \
     modelloader.h \
     vertex.h \
-    modelloaddialog.h
+    modelloaddialog.h \
+    mainwindow.h \
+    renderer.h
 
 RESOURCES += \
     shaders.qrc
