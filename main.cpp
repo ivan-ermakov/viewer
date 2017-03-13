@@ -5,8 +5,19 @@
 #include "mainwindow.h"
 #include "renderer.h"
 
+#include "debug/Stable.h"
+
 int main(int argc, char *argv[])
 {
+    installMemoryLeaksFilter();
+    installCrashHandler();
+
+    /*int* lk = new int;
+    char* lk2 = new char[20];
+
+    ++lk;
+    ++lk2;*/
+
     QApplication app(argc, argv);
 
     QSurfaceFormat format;
@@ -27,6 +38,9 @@ int main(int argc, char *argv[])
     QLabel note("OpenGL Support required");
     note.show();
 #endif
+
+    QCoreApplication::sendPostedEvents(0x0, QEvent::DeferredDelete);
+    QCoreApplication::processEvents();
 
     return app.exec();
 }

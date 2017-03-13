@@ -8,9 +8,9 @@ SOURCES += main.cpp \
     modelloader.cpp \
     modelloaddialog.cpp \
     mainwindow.cpp \
-    renderer.cpp
-
-SOURCES +=
+    renderer.cpp \
+    debug/CrashDump.cpp \
+    debug/MemoryLeaksDetection.cpp
 
 HEADERS += \
     model.h \
@@ -18,11 +18,18 @@ HEADERS += \
     vertex.h \
     modelloaddialog.h \
     mainwindow.h \
-    renderer.h
+    renderer.h \
+    debug/CrashDump.h \
+    debug/DisableMemoryLeak.h \
+    debug/EnableMemoryLeak.h \
+    debug/MemoryLeaksDetection.h \
+    debug/Stable.h
 
-LIBS += -lopengl32
+LIBS += -lopengl32 -ldbghelp -luser32
 
 RESOURCES += \
     shaders.qrc
 
 FORMS +=
+
+DEFINES +=_CRTDBG_MAP_ALLOC
