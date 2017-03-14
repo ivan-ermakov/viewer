@@ -16,20 +16,23 @@
 *
 */
 
-/*#include <QtCore>
-#include <QtWidgets>*/
+#ifndef DEBUG_STABLE
+#define DEBUG_STABLE
 
 #include "Debug/MemoryLeaksDetection.h"
 
 #include "Debug/DisableMemoryLeak.h"
 
-//#if defined(__cplusplus)
+#if defined(__cplusplus)
 
 #include <QtCore>
 #include <QtWidgets>
+#include <QList>
 
-//#endif
+#endif
 
 #include "Debug/EnableMemoryLeak.h"
 
 #include "Debug/CrashDump.h"
+
+#endif

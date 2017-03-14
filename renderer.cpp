@@ -1,5 +1,7 @@
 #include <cmath>
 
+#include "debug/Stable.h"
+
 #include <QMouseEvent>
 #include <QFileDialog>
 #include <QColorDialog>
@@ -31,13 +33,15 @@ Renderer::~Renderer()
 
 void Renderer::loadModel(QString fileName)
 {
-    mdl = nullptr;
-
     ModelLoadDialog* mld = new ModelLoadDialog(this, fileName);
     mld->exec();
 
     if (mld->isReady())
     {
+        if (mdl)
+            delete mdl;
+        mdl = nullptr;
+
         mdl = new Model();
         mld->read(mdl);
     }

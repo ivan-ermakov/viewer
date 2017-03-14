@@ -1,6 +1,8 @@
 #ifndef MODELLOADER_H
 #define MODELLOADER_H
 
+#include "debug/Stable.h"
+
 #include <QTimer>
 #include <QString>
 #include <QVector2D>
@@ -10,7 +12,6 @@
 #include <QOpenGLFunctions>
 
 #include "model.h"
-#include "vertex.h"
 
 // Widget + Thread
 

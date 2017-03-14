@@ -1,6 +1,3 @@
-#include "model.h"
-#include "modelloader.h"
-
 #include <string>
 #include <vector>
 #include <sstream>
@@ -8,7 +5,12 @@
 #include <iostream>
 #include <locale>
 
+#include "debug/Stable.h"
+
 #include <QMutexLocker>
+
+#include "model.h"
+#include "modelloader.h"
 
 // Treat / as whitespace
 struct Ctype: std::ctype<char>
@@ -134,7 +136,13 @@ void ModelLoader::run()
     std::string s;
     std::stringstream ss;
 
-    ss.imbue(std::locale(std::locale(), new Ctype()));
+#ifdef _DEBUG
+#undef new
+    Ctype* ct = new Ctype();
+#define new DBG_NEW
+#endif
+
+    ss.imbue(std::locale(std::locale(), ct));
 
     while (std::getline(in, s))
     {

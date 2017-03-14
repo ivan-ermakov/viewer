@@ -1,11 +1,11 @@
+#include "debug/Stable.h"
+
 #include <QApplication>
 #include <QLabel>
 #include <QSurfaceFormat>
 
 #include "mainwindow.h"
 #include "renderer.h"
-
-#include "debug/Stable.h"
 
 int main(int argc, char *argv[])
 {

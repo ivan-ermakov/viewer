@@ -1,6 +1,8 @@
 #ifndef MODELLOADDIALOG_H
 #define MODELLOADDIALOG_H
 
+#include "debug/Stable.h"
+
 #include <QString>
 #include <QWidget>
 #include <QProgressDialog>

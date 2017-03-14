@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "debug/Stable.h"
+
 #include <QMenu>
 #include <QMainWindow>
 

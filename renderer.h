@@ -1,6 +1,8 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include "debug/Stable.h"
+
 #include <QString>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>

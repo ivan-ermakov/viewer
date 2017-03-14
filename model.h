@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "debug/Stable.h"
+
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>

@@ -1,5 +1,6 @@
 #ifdef WIN32
 
+#include "Debug/Stable.h"
 #include <QDateTime>
 
 #include <excpt.h>

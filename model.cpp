@@ -1,5 +1,3 @@
-#include "model.h"
-
 #include <string>
 #include <vector>
 #include <sstream>
@@ -7,11 +5,15 @@
 #include <iostream>
 #include <locale>
 
+#include "debug/Stable.h"
+
 #include <QString>
 #include <QVector2D>
 #include <QVector3D>
 #include <QMutexLocker>
 #include <QProgressDialog>
+
+#include "model.h"
 
 Model::Model()
     : indexBuf(QOpenGLBuffer::IndexBuffer)

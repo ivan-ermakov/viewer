@@ -26,7 +26,7 @@ int ReportHook( int , char *message, int * )
   {
     std::map<std::string, leak>::iterator i = m.find(lastmessage);
     if(i != m.end())
-      i->second.size += b;
+      i->second.size += (std::size_t) b;
     bhavelastmessage = false;            
   }
   else if(strncmp(message, " Data:", 6) != 0 && strstr(message,") :"))

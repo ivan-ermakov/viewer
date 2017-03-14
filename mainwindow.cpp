@@ -1,3 +1,5 @@
+#include "debug/Stable.h"
+
 #include <QMenuBar>
 #include <QFileDialog>
 #include <QColorDialog>

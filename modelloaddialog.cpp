@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include "debug/Stable.h"
+
 #include "modelloaddialog.h"
 
 ModelLoadDialog::ModelLoadDialog(QWidget *parent, QString fileName) :
