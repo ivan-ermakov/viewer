@@ -136,10 +136,10 @@ void ModelLoader::run()
     std::string s;
     std::stringstream ss;
 
-#ifdef _DEBUG
 #undef new
     Ctype* ct = new Ctype();
-#define new DBG_NEW
+#ifdef _DEBUG
+#define new DEBUG_NEW
 #endif
 
     ss.imbue(std::locale(std::locale(), ct));

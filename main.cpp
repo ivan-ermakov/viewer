@@ -12,11 +12,11 @@ int main(int argc, char *argv[])
     installMemoryLeaksFilter();
     installCrashHandler();
 
-    /*int* lk = new int;
+    int* lk = new int;
     char* lk2 = new char[20];
 
     ++lk;
-    ++lk2;*/
+    ++lk2;
 
     QApplication app(argc, argv);
 
