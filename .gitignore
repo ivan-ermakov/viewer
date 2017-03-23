@@ -7,20 +7,9 @@
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
 # Fortran module files
 *.mod
 *.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
 
 # Executables
 *.exe
@@ -32,3 +21,7 @@
 *.pro.user
 
 data/
+
+*.opendb
+*.VC.db
+*.user
