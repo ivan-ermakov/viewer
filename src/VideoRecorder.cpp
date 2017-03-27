@@ -61,7 +61,7 @@ void VideoRecorder::run()
 			//std::cout << "recording\n";
 
 			//QOpenGLWidget* oglw = dynamic_cast<QOpenGLWidget*>(targetWidget);
-			if (QTime::currentTime() > lastFrameTime.addMSecs(1000 / vw->getFps()))
+			if (QTime::currentTime() >= lastFrameTime.addMSecs(1000 / vw->getFps()))
 			{		
 				{
 					QMutexLocker l(&mtx);
