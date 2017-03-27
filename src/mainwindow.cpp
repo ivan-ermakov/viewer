@@ -8,7 +8,8 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    renderer(new Renderer(this))
+    renderer(new Renderer(this)),
+	videoRecorder(new VideoRecorder(this, renderer))
 {
     renderer->setGeometry(geometry());
 
@@ -37,16 +38,44 @@ MainWindow::MainWindow(QWidget *parent) :
     fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
 
+	startRecordAct = new QAction(tr("&Record"), this);
+	startRecordAct->setStatusTip(tr("Start recording video"));
+	connect(startRecordAct, &QAction::triggered, this, &MainWindow::startRecord);
+
+	/*pauseRecordAct = new QAction(tr("&Pause"), this);
+	pauseRecordAct->setStatusTip(tr("Pause video"));
+	connect(pauseRecordAct, &QAction::triggered, videoRecorder, &VideoRecorder::pauseRecord);*/
+
+	stopRecordAct = new QAction(tr("&Stop"), this);
+	stopRecordAct->setStatusTip(tr("Stop recording video"));
+	connect(stopRecordAct, &QAction::triggered, this, &MainWindow::stopRecord);
+
 	videoMenu = menuBar()->addMenu(tr("&Video"));
-	//videoMenu->addAction(startRecordAct);
-	//videoMenu->addAction(stopRecordAct);
+	videoMenu->addAction(startRecordAct);
+	//videoMenu->addAction(pauseRecordAct);
+	videoMenu->addAction(stopRecordAct);
+
+	videoRecorder->start();
 }
 
 MainWindow::~MainWindow()
 {
+	videoRecorder->stopRecord();
+	videoRecorder->wait();
+
+	delete videoRecorder;
     delete renderer;
+
     delete openAct;
+	delete lightColorAct;
+	delete modelColorAct;
+	delete exitAct;
     delete fileMenu;
+
+	delete startRecordAct;
+	delete pauseRecordAct;
+	delete stopRecordAct;
+	delete videoMenu;
 }
 
 void MainWindow::resizeEvent(QResizeEvent* event)
@@ -54,6 +83,12 @@ void MainWindow::resizeEvent(QResizeEvent* event)
     // Maybe swap
     QMainWindow::resizeEvent(event);
     renderer->setGeometry(QRect(0, 0, geometry().width(), geometry().height()));
+}
+
+void MainWindow::paintEvent(QPaintEvent* event)
+{
+	//QMainWindow::paintEvent(event);
+	//record(grab().toImage());
 }
 
 void MainWindow::openModelDialog()
@@ -69,4 +104,23 @@ void MainWindow::lightColorDialog()
 void MainWindow::modelColorDialog()
 {
     renderer->setModelColor(QColorDialog::getColor(renderer->getModelColor(), this, "Choose model color"));
+}
+
+void MainWindow::startRecord()
+{
+	if (videoRecorder->isRecording())
+	{
+		videoRecorder->pauseRecord();
+		startRecordAct->setText("Record");
+	}
+	else
+	{
+		videoRecorder->startRecord();
+		startRecordAct->setText("Pause");
+	}
+}
+
+void MainWindow::stopRecord()
+{
+	videoRecorder->stopRecord();
 }

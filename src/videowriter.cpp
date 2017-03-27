@@ -16,7 +16,7 @@ extern "C"
 
 #include "videowriter.h"
 
-VideoWriter::VideoWriter(AVCodecID codecId_, AVPixelFormat pixelFormat_, int w, int h, int fps_, int bitRate_) :
+VideoWriter::VideoWriter(int w, int h, int fps_, AVCodecID codecId_, AVPixelFormat pixelFormat_, int bitRate_) :
 	width(w),
 	height(h),
 	fps(fps_),
@@ -24,13 +24,13 @@ VideoWriter::VideoWriter(AVCodecID codecId_, AVPixelFormat pixelFormat_, int w, 
 	bitRate(bitRate_),
 	codecId(codecId_),
 	swsFlags(SWS_BICUBIC),
+	formatContext(nullptr),
+	outputFormat(nullptr),
 	videoStream(nullptr),
 	frameCount(0),
 	picture(nullptr),
 	tmpPicture(nullptr)
-{
-	initAv();
-}
+{}
 
 VideoWriter::~VideoWriter()
 {
@@ -157,7 +157,17 @@ void VideoWriter::close()
 	av_free(formatContext);
 	formatContext = nullptr;
 
-	std::cout << "Written " << frameCount << " frames\n";
+	//std::cout << "Written " << frameCount << " frames\n";
+}
+
+bool VideoWriter::isOpen()
+{
+	return formatContext && videoStream;
+}
+
+int VideoWriter::getFps()
+{
+	return fps;
 }
 
 bool VideoWriter::writeVideoFrame(std::string fileName, int frames)
@@ -322,8 +332,11 @@ void VideoWriter::closeVideo(AVStream *st)
 {
 	avcodec_close(st->codec);
 
-	freeFrame(picture);
-	picture = nullptr;
+	if (picture)
+	{
+		freeFrame(picture);
+		picture = nullptr;
+	}
 
 	if (tmpPicture)
 	{
@@ -536,8 +549,8 @@ bool VideoWriter::convertVideoFrame(AVCodecContext* c, AVFrame* frame, AVFrame* 
 
 	int ret = sws_scale(convertContext, frame->data, frame->linesize, 0, frame->height, frame_to->data, frame_to->linesize);
 
-	if (ret != 0)
-		std::cerr << "sws_scale -> " << ret << "\n";
+	//if (ret != 0)
+		//std::cerr << "sws_scale -> " << ret << "\n";
 
 	sws_freeContext(convertContext);
 

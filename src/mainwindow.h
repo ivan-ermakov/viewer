@@ -6,7 +6,8 @@
 #include <QMenu>
 #include <QMainWindow>
 
-#include "renderer.h"
+#include "Renderer.h"
+#include "VideoRecorder.h"
 
 class MainWindow : public QMainWindow
 {
@@ -18,6 +19,7 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent*);
+	void paintEvent(QPaintEvent*);
 
 private:
     QMenu* fileMenu;
@@ -28,16 +30,25 @@ private:
 
 	QMenu* videoMenu;
 	QAction* startRecordAct;
+	QAction* pauseRecordAct;
 	QAction* stopRecordAct;
 
+	// TODO: QMenu* aboutMenu;
+
     Renderer* renderer;
+	VideoRecorder* videoRecorder;
 
 signals:
+	void record(QImage);
 
 public slots:
     void openModelDialog();
     void lightColorDialog();
     void modelColorDialog();
+
+	void startRecord();
+	//void pauseRecord();
+	void stopRecord();
 };
 
 #endif // MAINWINDOW_H

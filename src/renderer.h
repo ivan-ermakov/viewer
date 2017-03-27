@@ -59,6 +59,9 @@ private:
 
     QColor modelColor;
     QColor lightColor;
+
+signals:
+	void recordFrame(QImage);
 };
 
 #endif // RENDERER_H

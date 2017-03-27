@@ -217,4 +217,5 @@ void Renderer::paintGL()
 
     // Draw
     mdl->draw(&program);
+	recordFrame(grabFramebuffer());
 }

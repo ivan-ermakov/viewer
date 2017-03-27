@@ -14,13 +14,16 @@ extern "C"
 class VideoWriter
 {
 public:
-    VideoWriter(AVCodecID codecId_ = AV_CODEC_ID_NONE, AVPixelFormat pixelFormat_ = AV_PIX_FMT_YUV420P, int w = 352, int h = 288, int fps_ = 25, int bitRate_ = 400000); // AVCodecID
+    VideoWriter(int w = 352, int h = 288, int fps_ = 25, AVCodecID codecId_ = AV_CODEC_ID_NONE, AVPixelFormat pixelFormat_ = AV_PIX_FMT_YUV420P, int bitRate_ = 400000); // AVCodecID
 	~VideoWriter();
 
 	static void initAv();
 
 	bool open(std::string);
 	void close();
+
+	bool isOpen();
+	int getFps();
 
 	bool writeVideoFrame(std::string, int frames = 1);
 	bool writeVideoFrame(QImage, int frames = 1);
