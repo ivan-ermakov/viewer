@@ -1,1 +1,6 @@
-<RCC/>
+<RCC>
+    <qresource prefix="/">
+        <file>data/fshader.glsl</file>
+        <file>data/vshader.glsl</file>
+    </qresource>
+</RCC>
