@@ -29,7 +29,8 @@ VideoWriter::VideoWriter(int w, int h, int fps_, AVCodecID codecId_, AVPixelForm
 	videoStream(nullptr),
 	frameCount(0),
 	picture(nullptr),
-	tmpPicture(nullptr)
+	tmpPicture(nullptr),
+	imgFrame(nullptr)
 {}
 
 VideoWriter::~VideoWriter()
@@ -170,12 +171,12 @@ int VideoWriter::getFps()
 	return fps;
 }
 
-bool VideoWriter::writeVideoFrame(std::string fileName, int frames)
+/*bool VideoWriter::writeVideoFrame(std::string fileName, int frames)
 {
 	return writeVideoFrame(QImage(QString::fromStdString(fileName)), frames);
 }
 
-bool VideoWriter::writeVideoFrame(QImage img, int frames)
+bool VideoWriter::writeVideoFrame(const QImage& img, int frames)
 {
 	AVFrame* frame = loadFrame(img);
 	if (!frame)
@@ -189,24 +190,26 @@ bool VideoWriter::writeVideoFrame(QImage img, int frames)
 	freeFrame(frame);
 
 	return true;
-}
+}*/
 
-bool VideoWriter::writeVideoFrame(std::string fileName, double time)
+bool VideoWriter::writeVideoFrame(std::string fileName, int64_t time)
 {
 	return writeVideoFrame(QImage(QString::fromStdString(fileName)), time);
 }
 
-bool VideoWriter::writeVideoFrame(QImage img, double time)
+bool VideoWriter::writeVideoFrame(const QImage& img, int64_t time)
 {
-	AVFrame* frame = loadFrame(img);
+	/*AVFrame* frame = loadFrame(img);
 	if (!frame)
-		return false;
+		return false;*/
 
-	writeVideoFrames(videoStream, frame, time);
+	frameReadImage(imgFrame, img);
+
+	writeVideoFrames(videoStream, imgFrame, time);
 
 	writeBufferedFrames(videoStream);
 
-	freeFrame(frame);
+	//freeFrame(frame);
 
 	return true;
 }
@@ -325,6 +328,13 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 		return nullptr;
 	}
 
+	imgFrame = allocateFrame(c->width, c->height, AV_PIX_FMT_RGB24);
+	if (!imgFrame)
+	{
+		std::cerr << "Could not allocate temporary picture\n";
+		return nullptr;
+	}
+
 	return st;
 }
 
@@ -347,7 +357,7 @@ void VideoWriter::closeVideo(AVStream *st)
 	//av_free(video_outbuf);
 }
 
-AVFrame* VideoWriter::allocateFrame(AVCodecContext* c)
+AVFrame* VideoWriter::allocateFrame(int w, int h, AVPixelFormat pixFmt)
 {
 	AVFrame* frame;
 
@@ -356,20 +366,25 @@ AVFrame* VideoWriter::allocateFrame(AVCodecContext* c)
 	if (!frame)
 		return nullptr;
 
-	frame->format = c->pix_fmt;
-	frame->width = c->width;
-	frame->height = c->height;
+	frame->format = pixFmt;
+	frame->width = w;
+	frame->height = h;
 
 	// the image can be allocated by any means and av_image_alloc() is
 	// just the most convenient way if av_malloc() is to be used
 
-	if (av_image_alloc(frame->data, frame->linesize, c->width, c->height, c->pix_fmt, 32) < 0)
+	if (av_image_alloc(frame->data, frame->linesize, w, h, pixFmt, 32) < 0)
 	{
 		std::cerr << "Could not allocate raw picture buffer\n";
 		return nullptr;
 	}
 
 	return frame;
+}
+
+AVFrame* VideoWriter::allocateFrame(AVCodecContext* c)
+{
+	return allocateFrame(c->width, c->height, c->pix_fmt);
 }
 
 void VideoWriter::freeFrame(AVFrame* f)
@@ -480,7 +495,7 @@ int VideoWriter::writeVideoFrame(AVStream* st, AVFrame* frame)
 	return ret;
 }
 
-bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, int frames)
+/*bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, int frames)
 {
 	if (st->codec->pix_fmt != (AVPixelFormat)frame->format)
 	{
@@ -500,9 +515,9 @@ bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, int frames)
 	}
 
 	return true;
-}
+}*/
 
-bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, double time)
+bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, int64_t time)
 {
 	if (st->codec->pix_fmt != (AVPixelFormat)frame->format)
 	{
@@ -513,9 +528,9 @@ bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, double time)
 		frame = tmpPicture;
 	}
 
-	time += (double)av_stream_get_end_pts(videoStream) * videoStream->time_base.num / videoStream->time_base.den;
+	time += 1000 * av_stream_get_end_pts(videoStream) * videoStream->time_base.num / videoStream->time_base.den;
 
-	for (; (double)av_stream_get_end_pts(videoStream) * videoStream->time_base.num / videoStream->time_base.den < time;)
+	for (; 1000 * av_stream_get_end_pts(videoStream) * videoStream->time_base.num / videoStream->time_base.den < time;)
 	{
 		// write interleaved audio and video frames
 		if (writeVideoFrame(videoStream, frame) < 0)
@@ -557,7 +572,32 @@ bool VideoWriter::convertVideoFrame(AVCodecContext* c, AVFrame* frame, AVFrame* 
 	return ret > 0;
 }
 
-AVFrame* VideoWriter::loadFrame(QImage img)
+bool VideoWriter::frameReadImage(AVFrame* frame, const QImage& img)
+{
+	if (!frame || frame->format != AV_PIX_FMT_RGB24)
+		return false;
+
+	// Not always necessary
+	QImage im = img.scaled(QSize(frame->width, frame->height));
+
+	int x, y;
+	QColor clr;
+
+	for (y = 0; y < im.height(); y++)
+	{
+		for (x = 0; x < im.width(); x++)
+		{
+			clr = im.pixelColor(QPoint(x, y));
+			frame->data[0][y * frame->linesize[0] + x * 3] = (uint8_t)clr.red() * clr.alpha() / 255;
+			frame->data[0][y * frame->linesize[0] + x * 3 + 1] = (uint8_t)clr.green() * clr.alpha() / 255;
+			frame->data[0][y * frame->linesize[0] + x * 3 + 2] = (uint8_t)clr.blue() * clr.alpha() / 255;
+		}
+	}
+
+	return true;
+}
+
+AVFrame* VideoWriter::loadFrame(const QImage& img)
 {
 	AVFrame* frame = av_frame_alloc();
 
@@ -580,9 +620,9 @@ AVFrame* VideoWriter::loadFrame(QImage img)
 	int x, y;
 	QColor clr;
 
-	for (y = 0; y < frame->height; y++)
+	for (y = 0; y < img.height(); y++) // was frame->
 	{
-		for (x = 0; x < frame->width; x++)
+		for (x = 0; x < img.width(); x++)
 		{
 			clr = img.pixelColor(QPoint(x, y));
 			frame->data[0][y * frame->linesize[0] + x * 3] = (uint8_t)clr.red() * clr.alpha() / 255;

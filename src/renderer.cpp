@@ -6,8 +6,9 @@
 #include <QFileDialog>
 #include <QColorDialog>
 
-#include "renderer.h"
-#include "modelloaddialog.h"
+#include "Renderer.h"
+#include "ModelLoadDialog.h"
+#include "VideoRecorder.h"
 
 Renderer::Renderer(QWidget *parent) :
     QOpenGLWidget(parent),
@@ -18,9 +19,7 @@ Renderer::Renderer(QWidget *parent) :
     translation(0, 0, -5),
     lightColor(Qt::white),
     modelColor(Qt::white)
-{    
-
-}
+{}
 
 Renderer::~Renderer()
 {
@@ -29,6 +28,20 @@ Renderer::~Renderer()
     makeCurrent();
     delete mdl;
     doneCurrent();
+}
+
+QImage& Renderer::getFrameBuffer()
+{
+	return frameBuffer;
+}
+
+void Renderer::updateFrameBuffer()
+{
+	//makeCurrent();
+	frameBuffer = grabFramebuffer();
+	//doneCurrent();
+
+	//recordFrame();
 }
 
 void Renderer::loadModel(QString fileName)
@@ -57,6 +70,20 @@ void Renderer::setLightColor(QColor c)
 void Renderer::setModelColor(QColor c)
 {
     modelColor = c;
+}
+
+int Renderer::getWidth()
+{
+	GLint vp[4];
+	glGetIntegerv(GL_VIEWPORT, vp);
+	return vp[2];
+}
+
+int Renderer::getHeight()
+{
+	GLint vp[4];
+	glGetIntegerv(GL_VIEWPORT, vp);
+	return vp[3];
 }
 
 QColor Renderer::getLightColor()
@@ -145,11 +172,11 @@ void Renderer::initializeGL()
     glClearColor(0, 0, 0, 1);
 
     // Compile vertex shader
-    if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/data/vshader.glsl"))
+    if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "data/vshader.glsl"))
         close();
 
     // Compile fragment shader
-    if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/data/fshader.glsl"))
+    if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "data/fshader.glsl"))
         close();
 
     // Link shader pipeline
@@ -187,6 +214,7 @@ void Renderer::resizeGL(int w, int h)
 
 void Renderer::paintGL()
 {
+	makeCurrent();
     // Clear color and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -217,5 +245,9 @@ void Renderer::paintGL()
 
     // Draw
     mdl->draw(&program);
-	recordFrame(grabFramebuffer());
+	//frameBuffer = grabFramebuffer();
+	doneCurrent();
+
+	//if (needNextFrame())
+	//recordFrame(grabFramebuffer());
 }

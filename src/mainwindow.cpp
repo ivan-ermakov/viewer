@@ -85,12 +85,6 @@ void MainWindow::resizeEvent(QResizeEvent* event)
     renderer->setGeometry(QRect(0, 0, geometry().width(), geometry().height()));
 }
 
-void MainWindow::paintEvent(QPaintEvent* event)
-{
-	//QMainWindow::paintEvent(event);
-	//record(grab().toImage());
-}
-
 void MainWindow::openModelDialog()
 {
     renderer->loadModel(QFileDialog::getOpenFileName(this, tr("Open File"),"/data/",tr("Wavefront Model Files (*.obj)")));

@@ -23,12 +23,18 @@ public:
     explicit Renderer(QWidget *parent = 0);
     ~Renderer();
 
-    void loadModel(QString);
+    
     void setLightColor(QColor);
     void setModelColor(QColor);
 
+	int getWidth();
+	int getHeight();
     QColor getLightColor();
     QColor getModelColor();
+
+	QImage& getFrameBuffer();
+
+	void loadModel(QString);
 
 protected:
     void mousePressEvent(QMouseEvent*) override;
@@ -60,8 +66,13 @@ private:
     QColor modelColor;
     QColor lightColor;
 
+	QImage frameBuffer;
+
 signals:
-	void recordFrame(QImage);
+	void recordFrame();
+
+public slots:
+	void updateFrameBuffer();
 };
 
 #endif // RENDERER_H

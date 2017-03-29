@@ -19,7 +19,6 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent*);
-	void paintEvent(QPaintEvent*);
 
 private:
     QMenu* fileMenu;

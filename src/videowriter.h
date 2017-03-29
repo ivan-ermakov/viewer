@@ -14,7 +14,7 @@ extern "C"
 class VideoWriter
 {
 public:
-    VideoWriter(int w = 352, int h = 288, int fps_ = 25, AVCodecID codecId_ = AV_CODEC_ID_NONE, AVPixelFormat pixelFormat_ = AV_PIX_FMT_YUV420P, int bitRate_ = 400000); // AVCodecID
+    VideoWriter(int w = 352, int h = 288, int fps_ = 25, AVCodecID codecId_ = AV_CODEC_ID_NONE, AVPixelFormat pixelFormat_ = AV_PIX_FMT_YUV420P, int bitRate_ = 400000);
 	~VideoWriter();
 
 	static void initAv();
@@ -25,23 +25,25 @@ public:
 	bool isOpen();
 	int getFps();
 
-	bool writeVideoFrame(std::string, int frames = 1);
-	bool writeVideoFrame(QImage, int frames = 1);
-	bool writeVideoFrame(std::string, double time);
-	bool writeVideoFrame(QImage, double time);
+	//bool writeVideoFrame(std::string, int frames = 1);
+	//bool writeVideoFrame(const QImage&, int frames = 1);
+	bool writeVideoFrame(std::string, int64_t msec);
+	bool writeVideoFrame(const QImage&, int64_t msec);
 
 private:
 	AVStream* openVideo(AVCodecID); // add a video output stream
 	void closeVideo(AVStream*);
 
+	AVFrame* allocateFrame(int w, int h, AVPixelFormat);
 	AVFrame* allocateFrame(AVCodecContext*);
 	void freeFrame(AVFrame*);
 	int writeVideoFrame(AVStream* st, AVFrame* frame);
-	bool writeVideoFrames(AVStream* st, AVFrame* frame, int frames);
-	bool writeVideoFrames(AVStream* st, AVFrame* frame, double time);
+	//bool writeVideoFrames(AVStream* st, AVFrame* frame, int frames);
+	bool writeVideoFrames(AVStream* st, AVFrame* frame, int64_t time);
 	bool writeBufferedFrames(AVStream*);
 	bool convertVideoFrame(AVCodecContext*, AVFrame*, AVFrame*);
-	AVFrame* loadFrame(QImage);
+	bool frameReadImage(AVFrame*, const QImage&);
+	AVFrame* loadFrame(const QImage&);
 	AVFrame* readFrameImage(const std::string); // Load with ffmpeg
 	void fillYuvImage(AVFrame *pict, int frame_index, int width, int height); // prepare a dummy image
 
@@ -58,6 +60,7 @@ private:
 
 	AVFrame* picture;
 	AVFrame* tmpPicture;
+	AVFrame* imgFrame;
 
 	int frameCount;	
 	int swsFlags;

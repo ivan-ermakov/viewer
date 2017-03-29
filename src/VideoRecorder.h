@@ -2,17 +2,19 @@
 
 #include <QThread>
 #include <QTime>
-#include <QTimer>
+#include <QElapsedTimer>
 #include <QMutex>
+#include <QOpenGLWidget>
 
 #include "VideoWriter.h"
+#include "Renderer.h"
 
 class VideoRecorder : public QThread
 {
 	Q_OBJECT
 
 public:
-	VideoRecorder(QObject* parent, QWidget* targetWidget_);
+	VideoRecorder(QObject* parent, Renderer* targetWidget_);
 	~VideoRecorder();
 
 	void startRecord();
@@ -20,20 +22,27 @@ public:
 	void stopRecord();
 
 	bool isRecording();
+	bool needNextFrame();
 
 private:
 	void run() override;
 
 	bool record;
 	bool stop;
+	int fps;
 
-	QWidget* targetWidget;
+	Renderer* targetWidget;
 	VideoWriter* vw;
 
 	QImage img;
 	QMutex mtx;
-	QTime lastFrameTime;
+	qint64 lastFrameTime;
+	qint64 lastFpsTime;
+	QElapsedTimer frameTimer;
+
+signals:
+	void updateFrameBuffer();
 
 public slots:
-	void recordFrame(QImage);
+	void recordFrame();
 };

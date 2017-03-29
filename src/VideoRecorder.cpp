@@ -7,16 +7,22 @@
 
 #include "VideoRecorder.h"
 
-VideoRecorder::VideoRecorder(QObject* parent, QWidget* targetWidget_) :
+VideoRecorder::VideoRecorder(QObject* parent, Renderer* targetWidget_) :
 	record(false),
 	stop(false),
+	fps(0),
+	lastFrameTime(0),
+	lastFpsTime(0),
 	QThread(parent),
 	targetWidget(targetWidget_),
-	vw(new VideoWriter())
+	vw(new VideoWriter(1920, 1080))
 {
 	VideoWriter::initAv();
 
-	connect(targetWidget_, SIGNAL(recordFrame(QImage)), this, SLOT(recordFrame(QImage)));
+	connect(targetWidget_, SIGNAL(recordFrame()), this, SLOT(recordFrame()));
+	connect(this, SIGNAL(updateFrameBuffer()), targetWidget_, SLOT(updateFrameBuffer()));
+
+	frameTimer.start();
 }
 
 VideoRecorder::~VideoRecorder()
@@ -50,27 +56,39 @@ bool VideoRecorder::isRecording()
 	return record && !stop;
 }
 
+bool VideoRecorder::needNextFrame()
+{
+	return true; //  curTime >= lastFrameTime.addMSecs(1000 / vw->getFps());
+}
+
 void VideoRecorder::run()
 {
+	qint64 curTime;
+
 	for (; vw;)
 	{
-		msleep(25);
-
 		if (record)
-		{
-			//std::cout << "recording\n";
-
-			//QOpenGLWidget* oglw = dynamic_cast<QOpenGLWidget*>(targetWidget);
-			if (QTime::currentTime() >= lastFrameTime.addMSecs(1000 / vw->getFps()))
+		{			
+			curTime = frameTimer.elapsed();
+			if (curTime >= lastFrameTime + 1000 / vw->getFps())
 			{		
+				updateFrameBuffer();
 				{
-					QMutexLocker l(&mtx);
-					//vw->writeVideoFrame(targetWidget->grab().toImage(), 0.025);
-					vw->writeVideoFrame(img, 1. / vw->getFps());
-					//img = QImage();
-				}
+					//QMutexLocker l(&mtx);
+					vw->writeVideoFrame(targetWidget->getFrameBuffer(), curTime - lastFrameTime); //  1000 / vw->getFps()
+					//vw->writeVideoFrame(img, 1000 / vw->getFps());
+				}				
 				
-				lastFrameTime = QTime::currentTime();
+				lastFrameTime = curTime;
+
+				if (curTime >= lastFpsTime + 1000)
+				{
+					std::cout << "FPS:\t" << fps << "\n";
+					fps = 0;
+					lastFpsTime = curTime;
+				}
+				else
+					++fps;
 			}
 
 			/*QImage img(targetWidget->size(), QImage::Format::Format_ARGB32);
@@ -81,13 +99,28 @@ void VideoRecorder::run()
 
 		if (stop)
 			vw->close();
-
-		//std::cout << "running\n";
 	}
 }
 
-void VideoRecorder::recordFrame(QImage frm)
+void VideoRecorder::recordFrame()
 {
-	QMutexLocker l(&mtx);
-	img = frm;
+	/*QMutexLocker l(&mtx);
+	img = frm;*/
+
+	/*{
+		//QMutexLocker l(&mtx);
+		vw->writeVideoFrame(targetWidget->getFrameBuffer(), 1. / vw->getFps());
+	}
+
+	qint64 curTime = frameTimer.elapsed();
+	lastFrameTime = curTime;
+
+	if (curTime >= lastFpsTime + 1000)
+	{
+		std::cout << "FPS:\t" << fps << "\n";
+		fps = 0;
+		lastFpsTime = curTime;
+	}
+	else
+		++fps;*/
 }
