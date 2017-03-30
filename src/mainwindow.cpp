@@ -56,6 +56,16 @@ MainWindow::MainWindow(QWidget *parent) :
 	videoMenu->addAction(stopRecordAct);
 
 	videoRecorder->start();
+
+	/*VideoWriter vw;
+	vw.open("test");
+	vw.writeVideoFrame(QImage("data/0.png"), 1000);
+	vw.writeVideoFrame(QImage("data/1.png"), 1000);
+	vw.writeVideoFrame(QImage("data/2.png"), 1000);
+	vw.writeVideoFrame(QImage("data/3.png"), 1000);
+	vw.writeVideoFrame(QImage("data/4.png"), 1000);
+	vw.writeVideoFrame(QImage("data/4.jpg"), 1000);
+	vw.close();*/
 }
 
 MainWindow::~MainWindow()

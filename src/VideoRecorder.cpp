@@ -8,9 +8,9 @@
 #include "VideoRecorder.h"
 
 VideoRecorder::VideoRecorder(QObject* parent, Renderer* targetWidget_) :
-	record(false),
-	stop(false),
+	curStatus(Status::Stop),
 	fps(0),
+	frameReady(false),
 	lastFrameTime(0),
 	lastFpsTime(0),
 	QThread(parent),
@@ -21,8 +21,6 @@ VideoRecorder::VideoRecorder(QObject* parent, Renderer* targetWidget_) :
 
 	connect(targetWidget_, SIGNAL(recordFrame()), this, SLOT(recordFrame()));
 	connect(this, SIGNAL(updateFrameBuffer()), targetWidget_, SLOT(updateFrameBuffer()));
-
-	frameTimer.start();
 }
 
 VideoRecorder::~VideoRecorder()
@@ -33,27 +31,39 @@ VideoRecorder::~VideoRecorder()
 
 void VideoRecorder::startRecord()
 {
-	if (!vw->isOpen())
-		vw->open("video");
+	if (curStatus == Status::Stop)
+	{
+		lastFrameTime = 0;
+		lastFpsTime = 0;
 
-	stop = false;
-	record = true;
+		frameTimer.start();
+	}
+	else if (curStatus == Status::Pause)
+	{
+		lastFrameTime += frameTimer.elapsed() - pauseTime;
+		lastFpsTime += frameTimer.elapsed() - pauseTime;
+	}
+
+	curStatus = Status::Record;
+
+	frameReady = false;
+	updateFrameBuffer();
 }
 
 void VideoRecorder::pauseRecord()
 {
-	record = false;
+	curStatus = Status::Pause;
+	pauseTime = frameTimer.elapsed();
 }
 
 void VideoRecorder::stopRecord()
 {
-	stop = true;
-	record = false;
+	curStatus = Status::Stop;
 }
 
 bool VideoRecorder::isRecording()
 {
-	return record && !stop;
+	return curStatus == Status::Record;
 }
 
 bool VideoRecorder::needNextFrame()
@@ -67,11 +77,17 @@ void VideoRecorder::run()
 
 	for (; vw;)
 	{
-		if (record)
+		if (curStatus == Status::Record)
 		{			
+			if (!vw->isOpen())
+				vw->open("video");
+
 			curTime = frameTimer.elapsed();
-			if (curTime >= lastFrameTime + 1000 / vw->getFps())
+
+			if(frameReady)
+			//if (curTime >= lastFrameTime + 1000 / vw->getFps())
 			{		
+				frameReady = false;
 				updateFrameBuffer();
 				{
 					//QMutexLocker l(&mtx);
@@ -96,14 +112,14 @@ void VideoRecorder::run()
 			targetWidget->render(&painter);
 			vw->writeVideoFrame(img, 0.025);*/
 		}
-
-		if (stop)
+		else if (curStatus == Status::Stop && vw->isOpen())
 			vw->close();
 	}
 }
 
 void VideoRecorder::recordFrame()
 {
+	frameReady = true;
 	/*QMutexLocker l(&mtx);
 	img = frm;*/
 

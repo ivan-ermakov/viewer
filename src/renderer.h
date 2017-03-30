@@ -70,6 +70,7 @@ private:
 
 signals:
 	void recordFrame();
+	void recordFrame(QImage&);
 
 public slots:
 	void updateFrameBuffer();

@@ -27,9 +27,17 @@ public:
 private:
 	void run() override;
 
-	bool record;
-	bool stop;
+	enum class Status
+	{
+		Stop,
+		Pause,
+		Record
+	};
+
+	Status curStatus;
 	int fps;
+
+	bool frameReady;
 
 	Renderer* targetWidget;
 	VideoWriter* vw;
@@ -38,6 +46,7 @@ private:
 	QMutex mtx;
 	qint64 lastFrameTime;
 	qint64 lastFpsTime;
+	qint64 pauseTime;
 	QElapsedTimer frameTimer;
 
 signals:
@@ -45,4 +54,5 @@ signals:
 
 public slots:
 	void recordFrame();
+	//void recordFrame(QImage&);
 };

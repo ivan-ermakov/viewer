@@ -28,9 +28,9 @@ VideoWriter::VideoWriter(int w, int h, int fps_, AVCodecID codecId_, AVPixelForm
 	outputFormat(nullptr),
 	videoStream(nullptr),
 	frameCount(0),
-	picture(nullptr),
-	tmpPicture(nullptr),
-	imgFrame(nullptr)
+	videoFrame(nullptr),
+	imgFrame(nullptr),
+	imgConversionContext(nullptr)
 {}
 
 VideoWriter::~VideoWriter()
@@ -154,6 +154,8 @@ void VideoWriter::close()
 		avio_close(formatContext->pb);
 	}
 
+	outputFormat = nullptr;
+
 	/* free the stream */
 	av_free(formatContext);
 	formatContext = nullptr;
@@ -163,7 +165,7 @@ void VideoWriter::close()
 
 bool VideoWriter::isOpen()
 {
-	return formatContext && videoStream;
+	return formatContext && outputFormat && videoStream;
 }
 
 int VideoWriter::getFps()
@@ -203,9 +205,9 @@ bool VideoWriter::writeVideoFrame(const QImage& img, int64_t time)
 	if (!frame)
 		return false;*/
 
-	frameReadImage(imgFrame, img);
+	frameReadImage(videoFrame, img);
 
-	writeVideoFrames(videoStream, imgFrame, time);
+	writeVideoFrames(videoStream, videoFrame, time);
 
 	writeBufferedFrames(videoStream);
 
@@ -310,8 +312,8 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 	}
 
 	// allocate the encoded raw picture
-	picture = allocateFrame(c);
-	if (!picture)
+	videoFrame = allocateFrame(c);
+	if (!videoFrame)
 	{
 		std::cerr << "Could not allocate picture\n";
 		return nullptr;
@@ -321,19 +323,18 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 	picture is needed too. It is then converted to the required
 	output format */
 
-	tmpPicture = allocateFrame(c);
-	if (!tmpPicture)
-	{
-		std::cerr << "Could not allocate temporary picture\n";
-		return nullptr;
-	}
-
-	imgFrame = allocateFrame(c->width, c->height, AV_PIX_FMT_RGB24);
+	imgFrame = allocateFrame(c->width, c->height, AV_PIX_FMT_RGB32);
 	if (!imgFrame)
 	{
 		std::cerr << "Could not allocate temporary picture\n";
 		return nullptr;
 	}
+
+	imgConversionContext = sws_getContext(imgFrame->width, imgFrame->height,
+		(AVPixelFormat)imgFrame->format,
+		c->width, c->height,
+		c->pix_fmt,
+		swsFlags, nullptr, nullptr, nullptr);
 
 	return st;
 }
@@ -342,16 +343,22 @@ void VideoWriter::closeVideo(AVStream *st)
 {
 	avcodec_close(st->codec);
 
-	if (picture)
+	if (videoFrame)
 	{
-		freeFrame(picture);
-		picture = nullptr;
+		freeFrame(videoFrame);
+		videoFrame = nullptr;
 	}
 
-	if (tmpPicture)
+	if (imgFrame)
 	{
-		freeFrame(tmpPicture);
-		tmpPicture = nullptr;
+		freeFrame(imgFrame);
+		imgFrame = nullptr;
+	}
+
+	if (imgConversionContext)
+	{
+		sws_freeContext(imgConversionContext);
+		imgConversionContext = nullptr;
 	}
 
 	//av_free(video_outbuf);
@@ -359,9 +366,7 @@ void VideoWriter::closeVideo(AVStream *st)
 
 AVFrame* VideoWriter::allocateFrame(int w, int h, AVPixelFormat pixFmt)
 {
-	AVFrame* frame;
-
-	frame = av_frame_alloc();
+	AVFrame* frame = av_frame_alloc();
 
 	if (!frame)
 		return nullptr;
@@ -389,6 +394,9 @@ AVFrame* VideoWriter::allocateFrame(AVCodecContext* c)
 
 void VideoWriter::freeFrame(AVFrame* f)
 {
+	if (!f)
+		return;
+
 	av_free(f->data[0]);
 	av_free(f);
 }
@@ -398,14 +406,8 @@ int VideoWriter::writeVideoFrame(AVStream* st, AVFrame* frame)
 	int outSize;
 	int ret;
 
-	if (frame && st->codec->pix_fmt != (AVPixelFormat)frame->format)
-	{
-		// as we only generate a YUV420P picture, we must convert it to the codec pixel format if needed
-		if (!convertVideoFrame(st->codec, frame, tmpPicture))
-			return -1; // Fail
-
-		frame = tmpPicture;
-	}
+	if (!frame || st->codec->pix_fmt != (AVPixelFormat)frame->format)
+		return -1; // Fail
 
 	AVPacket pkt;
 	av_init_packet(&pkt);
@@ -497,21 +499,10 @@ int VideoWriter::writeVideoFrame(AVStream* st, AVFrame* frame)
 
 /*bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, int frames)
 {
-	if (st->codec->pix_fmt != (AVPixelFormat)frame->format)
-	{
-		// as we only generate a YUV420P picture, we must convert it to the codec pixel format if needed
-		if (!convertVideoFrame(st->codec, frame, tmpPicture))
-			return false;
-
-		frame = tmpPicture;
-	}
-
 	for (int i = 0; i < frames; ++i)
 	{
 		if (writeVideoFrame(st, frame) < 0)
-		{
 			return false;
-		}
 	}
 
 	return true;
@@ -519,15 +510,6 @@ int VideoWriter::writeVideoFrame(AVStream* st, AVFrame* frame)
 
 bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, int64_t time)
 {
-	if (st->codec->pix_fmt != (AVPixelFormat)frame->format)
-	{
-		// as we only generate a YUV420P picture, we must convert it to the codec pixel format if needed
-		if (!convertVideoFrame(st->codec, frame, tmpPicture))
-			return false;
-
-		frame = tmpPicture;
-	}
-
 	time += 1000 * av_stream_get_end_pts(videoStream) * videoStream->time_base.num / videoStream->time_base.den;
 
 	for (; 1000 * av_stream_get_end_pts(videoStream) * videoStream->time_base.num / videoStream->time_base.den < time;)
@@ -548,39 +530,68 @@ bool VideoWriter::writeBufferedFrames(AVStream* st)
 	return true;
 }
 
-bool VideoWriter::convertVideoFrame(AVCodecContext* c, AVFrame* frame, AVFrame* frame_to)
+bool VideoWriter::convertVideoFrame(AVCodecContext* c, AVFrame* srcFrame, AVFrame* dstFrame)
 {
-	SwsContext* convertContext = sws_getContext(frame->width, frame->height,
-		(AVPixelFormat)frame->format,
+	SwsContext* conversionContext = sws_getContext(srcFrame->width, srcFrame->height,
+		(AVPixelFormat)srcFrame->format,
 		c->width, c->height,
 		c->pix_fmt,
 		swsFlags, nullptr, nullptr, nullptr);
 
-	if (convertContext == nullptr)
+	if (conversionContext == nullptr)
 	{
 		std::cerr << "Cannot initialize the conversion context\n";
 		return false;
 	}
 
-	int ret = sws_scale(convertContext, frame->data, frame->linesize, 0, frame->height, frame_to->data, frame_to->linesize);
+	int ret = sws_scale(conversionContext, srcFrame->data, srcFrame->linesize, 0, srcFrame->height, dstFrame->data, dstFrame->linesize);
 
 	//if (ret != 0)
 		//std::cerr << "sws_scale -> " << ret << "\n";
 
-	sws_freeContext(convertContext);
+	sws_freeContext(conversionContext);
 
 	return ret > 0;
 }
 
 bool VideoWriter::frameReadImage(AVFrame* frame, const QImage& img)
 {
-	if (!frame || frame->format != AV_PIX_FMT_RGB24)
+	/*if (img.isNull())
+	{
+		std::cerr << "Reading Null QImage\n";
+		return false;
+	}*/
+
+	if (!imgFrame || imgFrame->width != img.width() || imgFrame->height != img.height() || !imgConversionContext)
+	{
+		freeFrame(imgFrame);
+		sws_freeContext(imgConversionContext);
+
+		imgFrame = allocateFrame(img.width(), img.height(), AV_PIX_FMT_RGB32);		
+
+		if (!imgFrame)
+		{
+			imgConversionContext = nullptr;
+			return false;
+		}
+
+		imgConversionContext = sws_getContext(imgFrame->width, imgFrame->height, (AVPixelFormat)imgFrame->format,
+			frame->width, frame->height, (AVPixelFormat)frame->format,
+			swsFlags, nullptr, nullptr, nullptr);
+
+		if (!imgConversionContext)
+			return false;
+	}
+
+	memcpy(imgFrame->data[0], img.constBits(), img.width() * img.height() * 4);
+
+	if (sws_scale(imgConversionContext, imgFrame->data, imgFrame->linesize, 0, imgFrame->height, frame->data, frame->linesize) <= 0)
 		return false;
 
 	// Not always necessary
-	QImage im = img.scaled(QSize(frame->width, frame->height));
+	//QImage im = img.scaled(QSize(frame->width, frame->height));
 
-	int x, y;
+	/*int x, y;
 	QColor clr;
 
 	for (y = 0; y < im.height(); y++)
@@ -592,7 +603,17 @@ bool VideoWriter::frameReadImage(AVFrame* frame, const QImage& img)
 			frame->data[0][y * frame->linesize[0] + x * 3 + 1] = (uint8_t)clr.green() * clr.alpha() / 255;
 			frame->data[0][y * frame->linesize[0] + x * 3 + 2] = (uint8_t)clr.blue() * clr.alpha() / 255;
 		}
-	}
+	}*/
+
+	/*for (int i = 0; i < im.width() * im.height(); i++)
+	{
+		memcpy(&frame->data[0][i * 3], im.constBits() + i * 4, 3);
+	}*/
+
+	//memcpy(frame->data[0], im.constBits(), im.width() * im.height() * 4);
+	/*frame->data[0][y * frame->linesize[0] + x * 3] = (uint8_t)clr.red();
+	frame->data[0][y * frame->linesize[0] + x * 3 + 1] = (uint8_t)clr.green();
+	frame->data[0][y * frame->linesize[0] + x * 3 + 2] = (uint8_t)clr.blue();*/
 
 	return true;
 }
@@ -634,7 +655,7 @@ AVFrame* VideoWriter::loadFrame(const QImage& img)
 	return frame;
 }
 
-AVFrame* VideoWriter::readFrameImage(const std::string imageFileName)
+AVFrame* VideoWriter::loadFrame(const std::string imageFileName)
 {
 	AVFormatContext* formatCtx = nullptr;
 	AVInputFormat* inputFormat = av_find_input_format(imageFileName.c_str());
@@ -720,22 +741,22 @@ AVFrame* VideoWriter::readFrameImage(const std::string imageFileName)
 }
 
 // prepare a dummy image
-void VideoWriter::fillYuvImage(AVFrame *pict, int frame_index, int width, int height)
+void VideoWriter::fillYuvImage(AVFrame *pict, int frame_index)
 {
 	int x, y, i;
 
 	i = frame_index;
 
 	// Y
-	for (y = 0; y < height; y++) {
-		for (x = 0; x < width; x++) {
+	for (y = 0; y < pict->height; y++) {
+		for (x = 0; x < pict->width; x++) {
 			pict->data[0][y * pict->linesize[0] + x] = x + y + i * 3;
 		}
 	}
 
 	// Cb and Cr
-	for (y = 0; y < height / 2; y++) {
-		for (x = 0; x < width / 2; x++) {
+	for (y = 0; y < pict->height / 2; y++) {
+		for (x = 0; x < pict->width / 2; x++) {
 			pict->data[1][y * pict->linesize[1] + x] = 128 + y + i * 2;
 			pict->data[2][y * pict->linesize[2] + x] = 64 + x + i * 5;
 		}
