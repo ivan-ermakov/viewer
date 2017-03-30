@@ -172,11 +172,11 @@ void Renderer::initializeGL()
     glClearColor(0, 0, 0, 1);
 
     // Compile vertex shader
-    if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/data/vshader.glsl"))
+    if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/rsc/vshader.glsl"))
         close();
 
     // Compile fragment shader
-    if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/data/fshader.glsl"))
+    if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/rsc/fshader.glsl"))
         close();
 
     // Link shader pipeline
