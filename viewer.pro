@@ -45,7 +45,8 @@ LIBS += -lshell32 \
 
 FORMS +=
 
-DEFINES += _CRTDBG_MAP_ALLOC
+# Fix this
+#DEFINES += _CRTDBG_MAP_ALLOC
 
 RESOURCES += \
     shaders.qrc

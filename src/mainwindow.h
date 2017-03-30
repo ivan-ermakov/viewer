@@ -21,6 +21,8 @@ protected:
     void resizeEvent(QResizeEvent*);
 
 private:
+    QGridLayout* layout;
+
     QMenu* fileMenu;
     QAction* openAct;
     QAction* modelColorAct;
@@ -32,6 +34,8 @@ private:
 	QAction* pauseRecordAct;
 	QAction* stopRecordAct;
 
+    QLabel* fpsLabel;
+
 	// TODO: QMenu* aboutMenu;
 
     Renderer* renderer;
@@ -41,6 +45,8 @@ signals:
 	void record(QImage);
 
 public slots:
+    void update();
+
     void openModelDialog();
     void lightColorDialog();
     void modelColorDialog();
@@ -48,6 +54,7 @@ public slots:
 	void startRecord();
 	//void pauseRecord();
 	void stopRecord();
+
 };
 
 #endif // MAINWINDOW_H

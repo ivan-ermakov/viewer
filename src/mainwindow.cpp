@@ -3,14 +3,21 @@
 #include <QMenuBar>
 #include <QFileDialog>
 #include <QColorDialog>
+#include <QGridLayout>
 
 #include "mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     renderer(new Renderer(this)),
-	videoRecorder(new VideoRecorder(this, renderer))
+    videoRecorder(new VideoRecorder(this, renderer)),
+    fpsLabel(new QLabel(this))
 {
+    /*setCentralWidget(new QWidget);
+    layout = (new QGridLayout(centralWidget()));
+    layout->addWidget(fpsLabel, 0, 0);
+    layout->addWidget(renderer, 0, 1);*/
+
     renderer->setGeometry(geometry());
 
     openAct = new QAction(tr("&Open"), this);
@@ -55,7 +62,18 @@ MainWindow::MainWindow(QWidget *parent) :
 	//videoMenu->addAction(pauseRecordAct);
 	videoMenu->addAction(stopRecordAct);
 
+    fpsLabel->setText("FPS: ");
+    fpsLabel->setGeometry(20, 10, 100, 100);
+    fpsLabel->setStyleSheet("QLabel { color : white; }");
+    fpsLabel->show();
+    fpsLabel->activateWindow();
+    fpsLabel->raise();
+
 	videoRecorder->start();
+
+    QTimer* timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+    timer->start(50);
 
 	/*VideoWriter vw;
 	vw.open("test");
@@ -88,6 +106,11 @@ MainWindow::~MainWindow()
 	delete videoMenu;
 }
 
+void MainWindow::update()
+{
+    fpsLabel->setText("FPS: " + QString::number(videoRecorder->getFps()));
+}
+
 void MainWindow::resizeEvent(QResizeEvent* event)
 {
     // Maybe swap
@@ -97,7 +120,10 @@ void MainWindow::resizeEvent(QResizeEvent* event)
 
 void MainWindow::openModelDialog()
 {
-    renderer->loadModel(QFileDialog::getOpenFileName(this, tr("Open File"),"/data/",tr("Wavefront Model Files (*.obj)")));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"),"/data/",tr("Wavefront Model Files (*.obj)"));
+
+    if (!fileName.isEmpty())
+        renderer->loadModel(fileName);
 }
 
 void MainWindow::lightColorDialog()

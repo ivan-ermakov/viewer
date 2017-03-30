@@ -1,3 +1,12 @@
+/*
+ * KILL THREAD
+FPS
+TIMER
+PAUSING
+SLOWMO
+QUALITY SELECTION
+*/
+
 #pragma once
 
 #include <QThread>
@@ -8,6 +17,13 @@
 
 #include "VideoWriter.h"
 #include "Renderer.h"
+
+enum Status
+{
+    VIDEO_STATUS_STOP,
+    VIDEO_STATUS_PAUSE,
+    VIDEO_STATUS_RECORD
+};
 
 class VideoRecorder : public QThread
 {
@@ -24,15 +40,10 @@ public:
 	bool isRecording();
 	bool needNextFrame();
 
-private:
-	void run() override;
+    int getFps();
 
-	enum class Status
-	{
-		Stop,
-		Pause,
-		Record
-	};
+private:
+    void run() override;
 
 	Status curStatus;
 	int fps;
