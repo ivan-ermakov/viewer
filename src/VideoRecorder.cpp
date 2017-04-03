@@ -119,7 +119,7 @@ void VideoRecorder::run()
         case VIDEO_STATUS_RECORD:
 			if (!vw->isOpen())
             {
-                vw->open("video");
+                //vw->open("video");
                 frameDelay = 1000 / vw->getFps();
             }
 
@@ -136,15 +136,14 @@ void VideoRecorder::run()
                         frameLength = 1000 / vw->getFps();
 
                     videoLength += frameLength;
-                    QImage img = targetWidget->getFrameBuffer();
+                    /*QImage img = targetWidget->getFrameBuffer();
                     QPainter p(&img);
                     p.setPen(QPen(Qt::white));
                     p.setFont(QFont("Times", 14, QFont::Bold));
                     p.drawText(QPoint(40, 40), QDateTime::fromMSecsSinceEpoch(videoLength).toUTC().toString("hh:mm:ss.zzz"));
                     p.end();
-                    frames.push_back(QPair<QImage, qint64>(img, frameLength));
-                    //vw->writeVideoFrame(img, frameLength);
-                    qDebug() << "VR\t" << frameLength << " ms\n";
+                    vw->writeVideoFrame(img, frameLength);
+                    qDebug() << "VR\t" << frameLength << " ms\n";*/
                 }
                 lastFrameTime = curTime;
 
@@ -162,10 +161,7 @@ void VideoRecorder::run()
         case VIDEO_STATUS_STOP:
             if (vw->isOpen())
             {
-                for (QPair<QImage, qint64>& fr : frames)
-                    vw->writeVideoFrame(fr.first, fr.second);
-
-                vw->close();
+                //vw->close();
             }
         }
 	}

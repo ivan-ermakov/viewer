@@ -239,6 +239,7 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 		return nullptr;
 	}
 
+    // TODO: avcodec_get_context_defaults3(st->codec, codec);
 	st->codecpar->codec_id = codec_id;
 	st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
 

@@ -7,7 +7,6 @@
 #include <QElapsedTimer>
 #include <QMutex>
 #include <QOpenGLWidget>
-#include <QVector>
 
 #include "VideoWriter.h"
 #include "Renderer.h"
@@ -54,14 +53,12 @@ private:
 	Renderer* targetWidget;
 	VideoWriter* vw;
 
-	QImage img;
 	QMutex mtx;
 	qint64 lastFrameTime;
 	qint64 lastFpsTime;
 	qint64 pauseTime;
     qint64 videoLength;
-	QElapsedTimer frameTimer;
-    QVector<QPair<QImage, qint64>> frames;
+    QElapsedTimer frameTimer;
 
 signals:
 	void updateFrameBuffer();
