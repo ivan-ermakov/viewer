@@ -14,6 +14,8 @@ extern "C"
 
 #include "debug/Stable.h"
 
+#include <QDebug>
+#include <QtDebug>
 #include <QString>
 
 #include "videowriter.h"
@@ -53,7 +55,7 @@ bool VideoWriter::open(std::string fileName)
 
 	if (!outputFormat)
 	{
-		printf("Could not deduce output format from file extension: using AVI.\n");
+        qDebug("Could not deduce output format from file extension: using AVI.\n");
 		outputFormat = av_guess_format("avi", nullptr, nullptr);
 		fileName += ".avi";
 	}
@@ -61,14 +63,14 @@ bool VideoWriter::open(std::string fileName)
 	/*if (!outputFormat)
 	{
 		// MPEG - black frames appended to end
-		printf("Could not deduce output format from file extension: using MPEG.\n");
+        qDebug("Could not deduce output format from file extension: using MPEG.\n");
 		outputFormat = av_guess_format("mpeg", nullptr, nullptr);
 		fileName += ".mpeg";
 	}*/
 
 	if (!outputFormat)
 	{
-		fprintf(stderr, "Could not find suitable output format\n");
+        qDebug("Could not find suitable output format\n");
 		return false;
 	}
 
@@ -76,12 +78,12 @@ bool VideoWriter::open(std::string fileName)
 	formatContext = avformat_alloc_context();
 	if (!formatContext)
 	{
-		fprintf(stderr, "Memory error\n");
+        qDebug("Memory error\n");
 		return false;
 	}
 
 	formatContext->oformat = outputFormat;
-	snprintf(formatContext->filename, sizeof(formatContext->filename), "%s", fileName.c_str());
+    _snprintf(formatContext->filename, sizeof(formatContext->filename), "%s", fileName.c_str());
 
 	/* add the audio and video streams using the default format codecs
 	and initialize the codecs */
@@ -114,7 +116,7 @@ bool VideoWriter::open(std::string fileName)
 	{
 		if (avio_open(&formatContext->pb, fileName.c_str(), AVIO_FLAG_WRITE) < 0)
 		{
-			std::cerr << "Could not open '" << fileName << "'\n";
+            qDebug() << "Could not open '" << fileName.c_str() << "'\n";
 			return false;
 		}
 	}
@@ -233,7 +235,7 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 	st = avformat_new_stream(formatContext, 0);
 	if (!st)
 	{
-		std::cerr << "Could not alloc stream\n";
+        qDebug() << "Could not alloc stream\n";
 		return nullptr;
 	}
 
@@ -275,14 +277,14 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 	codec = avcodec_find_encoder(st->codecpar->codec_id);
 	if (!codec)
 	{
-		fprintf(stderr, "openVideo: avcodec_find_encoder: codec not found\n");
+        qDebug("openVideo: avcodec_find_encoder: codec not found\n");
 		return nullptr;
 	}
 
 	c = avcodec_alloc_context3(codec);
 	if (!c)
 	{
-		fprintf(stderr, "Could not allocate video codec context\n");
+        qDebug("Could not allocate video codec context\n");
 		return nullptr;
 	}
 
@@ -317,7 +319,7 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 	// open the codec
 	if (avcodec_open2(c, codec, nullptr) < 0)
 	{
-		fprintf(stderr, "could not open codec\n");
+        qDebug("could not open codec\n");
 		return nullptr;
 	}
 
@@ -325,7 +327,7 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 	videoFrame = allocateFrame(c);
 	if (!videoFrame)
 	{
-		std::cerr << "Could not allocate picture\n";
+        qDebug() << "Could not allocate picture\n";
 		return nullptr;
 	}
 
@@ -336,7 +338,7 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 	imgFrame = allocateFrame(c->width, c->height, AV_PIX_FMT_RGB32);
 	if (!imgFrame)
 	{
-		std::cerr << "Could not allocate temporary picture\n";
+        qDebug() << "Could not allocate temporary picture\n";
 		return nullptr;
 	}
 
@@ -390,7 +392,7 @@ AVFrame* VideoWriter::allocateFrame(int w, int h, AVPixelFormat pixFmt)
 
 	if (av_image_alloc(frame->data, frame->linesize, w, h, pixFmt, 32) < 0)
 	{
-		std::cerr << "Could not allocate raw picture buffer\n";
+        qDebug() << "Could not allocate raw picture buffer\n";
 		return nullptr;
 	}
 
@@ -497,7 +499,7 @@ int VideoWriter::writeVideoFrame(AVStream* st, AVFrame* frame)
 
 	if (ret < 0)
 	{
-		std::cerr << "Error " << ret << " while writing video frame\n";
+        qDebug() << "Error " << ret << " while writing video frame\n";
 		return ret;
 	}
 
@@ -552,7 +554,7 @@ bool VideoWriter::convertVideoFrame(AVCodecContext* c, AVFrame* srcFrame, AVFram
 
 	if (conversionContext == nullptr)
 	{
-		std::cerr << "Cannot initialize the conversion context\n";
+        qDebug() << "Cannot initialize the conversion context\n";
 		return false;
 	}
 
@@ -646,7 +648,7 @@ AVFrame* VideoWriter::loadFrame(const QImage& img)
 
 	if (av_image_alloc(frame->data, frame->linesize, frame->width, frame->height, (AVPixelFormat)frame->format, 32) < 0)
 	{
-		std::cerr << "Could not allocate raw picture buffer\n";
+        qDebug() << "Could not allocate raw picture buffer\n";
 		return nullptr;
 	}
 
@@ -674,13 +676,13 @@ AVFrame* VideoWriter::loadFrame(const std::string imageFileName)
 
 	if (!inputFormat)
 	{
-		std::cerr << "Cant find input format!\n";
+        qDebug() << "Cant find input format!\n";
 		//return nullptr;
 	}
 
 	if (avformat_open_input(&formatCtx, imageFileName.c_str(), inputFormat, nullptr) != 0)
 	{
-		std::cerr << "Can't open image file '" << imageFileName << "'\n";
+        qDebug() << "Can't open image file '" << imageFileName.c_str() << "'\n";
 		return nullptr;
 	}
 
@@ -708,14 +710,14 @@ AVFrame* VideoWriter::loadFrame(const std::string imageFileName)
 	AVCodec* pCodec = avcodec_find_decoder(codecCtx->codec_id);
 	if (!pCodec)
 	{
-		printf("Codec not found\n");
+        qDebug("Codec not found\n");
 		return nullptr;
 	}
 
 	// Open codec
 	if (avcodec_open2(codecCtx, pCodec, nullptr)<0)
 	{
-		printf("Could not open codec\n");
+        qDebug("Could not open codec\n");
 		return nullptr;
 	}
 
@@ -726,7 +728,7 @@ AVFrame* VideoWriter::loadFrame(const std::string imageFileName)
 
 	if (!pFrame)
 	{
-		printf("Can't allocate memory for AVFrame\n");
+        qDebug("Can't allocate memory for AVFrame\n");
 		return nullptr;
 	}
 
@@ -735,7 +737,7 @@ AVFrame* VideoWriter::loadFrame(const std::string imageFileName)
 
 	if (av_read_frame(formatCtx, &packet) < 0)
 	{
-		std::cerr << "Failed to read frame!\n";
+        qDebug() << "Failed to read frame!\n";
 		return nullptr;
 	}
 
@@ -743,7 +745,7 @@ AVFrame* VideoWriter::loadFrame(const std::string imageFileName)
 
 	if (avcodec_decode_video2(codecCtx, pFrame, &frameFinished, &packet) < 0 || !frameFinished)
 	{
-		std::cerr << "Failed to decode frame!\n";
+        qDebug() << "Failed to decode frame!\n";
 		return nullptr;
 	}
 

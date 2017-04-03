@@ -1,7 +1,3 @@
-/*
-QUALITY SELECTION
-*/
-
 #pragma once
 
 #include "debug/Stable.h"
@@ -11,6 +7,7 @@ QUALITY SELECTION
 #include <QElapsedTimer>
 #include <QMutex>
 #include <QOpenGLWidget>
+#include <QVector>
 
 #include "VideoWriter.h"
 #include "Renderer.h"
@@ -64,6 +61,7 @@ private:
 	qint64 pauseTime;
     qint64 videoLength;
 	QElapsedTimer frameTimer;
+    QVector<QPair<QImage, qint64>> frames;
 
 signals:
 	void updateFrameBuffer();

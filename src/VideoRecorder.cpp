@@ -18,7 +18,7 @@ VideoRecorder::VideoRecorder(QObject* parent, Renderer* targetWidget_) :
     videoLength(0),
 	QThread(parent),
 	targetWidget(targetWidget_),
-    vw(new VideoWriter(1920, 1080, 25, 5000000))
+    vw(new VideoWriter(1920, 1080, 25, 5000000)) // , AV_CODEC_ID_RAWVIDEO
 {
 	VideoWriter::initAv();
 
@@ -113,7 +113,7 @@ void VideoRecorder::run()
     qint64 frameDelay;
 
     for (; curStatus != VIDEO_STATUS_TERMINATE;)
-	{
+    {
         switch (curStatus)
         {
         case VIDEO_STATUS_RECORD:
@@ -123,7 +123,7 @@ void VideoRecorder::run()
                 frameDelay = 1000 / vw->getFps();
             }
 
-            curTime = frameTimer.elapsed();//targetWidget->getLastFrameBufferUpdateTime();//
+            curTime = frameTimer.elapsed(); // targetWidget->getLastFrameBufferUpdateTime()
 
             if(frameReady && curTime >= lastFrameTime + frameDelay || videoLength == 0)
             {
@@ -141,7 +141,9 @@ void VideoRecorder::run()
                     p.setPen(QPen(Qt::white));
                     p.setFont(QFont("Times", 14, QFont::Bold));
                     p.drawText(QPoint(40, 40), QDateTime::fromMSecsSinceEpoch(videoLength).toUTC().toString("hh:mm:ss.zzz"));
-                    vw->writeVideoFrame(img, frameLength);
+                    p.end();
+                    frames.push_back(QPair<QImage, qint64>(img, frameLength));
+                    //vw->writeVideoFrame(img, frameLength);
                     qDebug() << "VR\t" << frameLength << " ms\n";
                 }
                 lastFrameTime = curTime;
@@ -154,41 +156,22 @@ void VideoRecorder::run()
 				}
                 else
                     ++lastSecondFrameCount;
-			}
-
-			/*QImage img(targetWidget->size(), QImage::Format::Format_ARGB32);
-			QPainter painter(&img);
-			targetWidget->render(&painter);
-			vw->writeVideoFrame(img, 0.025);*/
+            }
             break;
 
         case VIDEO_STATUS_STOP:
             if (vw->isOpen())
+            {
+                for (QPair<QImage, qint64>& fr : frames)
+                    vw->writeVideoFrame(fr.first, fr.second);
+
                 vw->close();
+            }
         }
 	}
 }
 
 void VideoRecorder::recordFrame()
 {
-	frameReady = true;
-	/*QMutexLocker l(&mtx);
-	img = frm;*/
-
-	/*{
-		//QMutexLocker l(&mtx);
-		vw->writeVideoFrame(targetWidget->getFrameBuffer(), 1. / vw->getFps());
-	}
-
-	qint64 curTime = frameTimer.elapsed();
-	lastFrameTime = curTime;
-
-	if (curTime >= lastFpsTime + 1000)
-	{
-		std::cout << "FPS:\t" << fps << "\n";
-		fps = 0;
-		lastFpsTime = curTime;
-	}
-	else
-		++fps;*/
+    frameReady = true;
 }
