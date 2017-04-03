@@ -33,6 +33,7 @@ public:
     QColor getModelColor();
 
 	QImage& getFrameBuffer();
+    qint64 getLastFrameBufferUpdateTime();
 
 	void loadModel(QString);
 
@@ -67,6 +68,7 @@ private:
     QColor lightColor;
 
 	QImage frameBuffer;
+    qint64 lastFrameBufferUpdateTime;
 
 signals:
 	void recordFrame();

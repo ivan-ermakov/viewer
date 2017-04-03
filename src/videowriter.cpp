@@ -12,11 +12,13 @@ extern "C"
 #include "libswscale/swscale.h"
 }
 
+#include "debug/Stable.h"
+
 #include <QString>
 
 #include "videowriter.h"
 
-VideoWriter::VideoWriter(int w, int h, int fps_, AVCodecID codecId_, AVPixelFormat pixelFormat_, int bitRate_) :
+VideoWriter::VideoWriter(int w, int h, int fps_, int bitRate_, AVCodecID codecId_, AVPixelFormat pixelFormat_) :
 	width(w),
 	height(h),
 	fps(fps_),
@@ -173,6 +175,20 @@ int VideoWriter::getFps()
 	return fps;
 }
 
+int VideoWriter::getBitRate()
+{
+    return bitRate;
+}
+
+bool VideoWriter::setBitRate(int bitRate_)
+{
+    if (isOpen() || bitRate_ <= 0)
+        return false;
+
+    bitRate = bitRate_;
+    return true;
+}
+
 /*bool VideoWriter::writeVideoFrame(std::string fileName, int frames)
 {
 	return writeVideoFrame(QImage(QString::fromStdString(fileName)), frames);
@@ -201,17 +217,11 @@ bool VideoWriter::writeVideoFrame(std::string fileName, int64_t time)
 
 bool VideoWriter::writeVideoFrame(const QImage& img, int64_t time)
 {
-	/*AVFrame* frame = loadFrame(img);
-	if (!frame)
-		return false;*/
-
+    qint64 start = 1000 * av_stream_get_end_pts(videoStream) * videoStream->time_base.num / videoStream->time_base.den;
 	frameReadImage(videoFrame, img);
-
-	writeVideoFrames(videoStream, videoFrame, time);
-
-	writeBufferedFrames(videoStream);
-
-	//freeFrame(frame);
+    writeVideoFrame(videoStream, videoFrame, time);
+    writeBufferedFrames(videoStream);
+    qDebug() << "VW pts\t" << 1000 * av_stream_get_end_pts(videoStream) * videoStream->time_base.num / videoStream->time_base.den - start << " ms";
 
 	return true;
 }
@@ -497,7 +507,7 @@ int VideoWriter::writeVideoFrame(AVStream* st, AVFrame* frame)
 	return ret;
 }
 
-/*bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, int frames)
+bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, int frames)
 {
 	for (int i = 0; i < frames; ++i)
 	{
@@ -506,20 +516,22 @@ int VideoWriter::writeVideoFrame(AVStream* st, AVFrame* frame)
 	}
 
 	return true;
-}*/
+}
 
-bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, int64_t time)
+bool VideoWriter::writeVideoFrame(AVStream* st, AVFrame* frame, int64_t time)
 {
-	time += 1000 * av_stream_get_end_pts(videoStream) * videoStream->time_base.num / videoStream->time_base.den;
+    /*time += 1000 * av_stream_get_end_pts(st) * st->time_base.num / st->time_base.den;
 
-	for (; 1000 * av_stream_get_end_pts(videoStream) * videoStream->time_base.num / videoStream->time_base.den < time;)
+    for (; 1000 * av_stream_get_end_pts(st) * st->time_base.num / st->time_base.den < time;)
 	{
 		// write interleaved audio and video frames
-		if (writeVideoFrame(videoStream, frame) < 0)
+        if (writeVideoFrame(st, frame) < 0)
 			return false;
-	}
+    }
 
-	return true;
+    return true;*/
+
+    return writeVideoFrames(st, frame, time * fps / 1000);
 }
 
 bool VideoWriter::writeBufferedFrames(AVStream* st)

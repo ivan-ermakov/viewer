@@ -1,13 +1,10 @@
 /*
- * KILL THREAD
-FPS
-TIMER
-PAUSING
-SLOWMO
 QUALITY SELECTION
 */
 
 #pragma once
+
+#include "debug/Stable.h"
 
 #include <QThread>
 #include <QTime>
@@ -22,7 +19,8 @@ enum Status
 {
     VIDEO_STATUS_STOP,
     VIDEO_STATUS_PAUSE,
-    VIDEO_STATUS_RECORD
+    VIDEO_STATUS_RECORD,
+    VIDEO_STATUS_TERMINATE // Terminate thread
 };
 
 class VideoRecorder : public QThread
@@ -36,17 +34,23 @@ public:
 	void startRecord();
 	void pauseRecord();
 	void stopRecord();
+    void terminate();
 
 	bool isRecording();
 	bool needNextFrame();
 
     int getFps();
+    qint64 getVideoLength();
+    int getBitRate();
+
+    bool setBitRate(int);
 
 private:
     void run() override;
 
 	Status curStatus;
 	int fps;
+    int lastSecondFrameCount;
 
 	bool frameReady;
 
@@ -58,6 +62,7 @@ private:
 	qint64 lastFrameTime;
 	qint64 lastFpsTime;
 	qint64 pauseTime;
+    qint64 videoLength;
 	QElapsedTimer frameTimer;
 
 signals:

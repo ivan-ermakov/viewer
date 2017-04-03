@@ -18,7 +18,8 @@ Renderer::Renderer(QWidget *parent) :
     scale(1),
     translation(0, 0, -5),
     lightColor(Qt::white),
-    modelColor(Qt::white)
+    modelColor(Qt::white),
+    lastFrameBufferUpdateTime(QDateTime::currentMSecsSinceEpoch())
 {}
 
 Renderer::~Renderer()
@@ -35,11 +36,17 @@ QImage& Renderer::getFrameBuffer()
 	return frameBuffer;
 }
 
+qint64 Renderer::getLastFrameBufferUpdateTime()
+{
+    return lastFrameBufferUpdateTime;
+}
+
 void Renderer::updateFrameBuffer()
 {
 	//makeCurrent();
 	frameBuffer = grabFramebuffer();
 	//doneCurrent();
+    lastFrameBufferUpdateTime = QDateTime::currentMSecsSinceEpoch();
 
 	recordFrame();
 }

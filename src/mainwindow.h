@@ -21,8 +21,6 @@ protected:
     void resizeEvent(QResizeEvent*);
 
 private:
-    QGridLayout* layout;
-
     QMenu* fileMenu;
     QAction* openAct;
     QAction* modelColorAct;
@@ -30,11 +28,13 @@ private:
     QAction* exitAct;
 
 	QMenu* videoMenu;
-	QAction* startRecordAct;
-	QAction* pauseRecordAct;
+    QAction* startRecordAct;
 	QAction* stopRecordAct;
+    QAction* bitRateHighAct;
+    QAction* bitRateLowAct;
 
     QLabel* fpsLabel;
+    QLabel* timerLabel;
 
 	// TODO: QMenu* aboutMenu;
 
@@ -54,6 +54,8 @@ public slots:
 	void startRecord();
 	//void pauseRecord();
 	void stopRecord();
+    void setHighBitRate();
+    void setLowBitRate();
 
 };
 

@@ -11,13 +11,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     renderer(new Renderer(this)),
     videoRecorder(new VideoRecorder(this, renderer)),
-    fpsLabel(new QLabel(this))
+    fpsLabel(new QLabel(this)),
+    timerLabel(new QLabel(this))
 {
-    /*setCentralWidget(new QWidget);
-    layout = (new QGridLayout(centralWidget()));
-    layout->addWidget(fpsLabel, 0, 0);
-    layout->addWidget(renderer, 0, 1);*/
-
     renderer->setGeometry(geometry());
 
     openAct = new QAction(tr("&Open"), this);
@@ -57,17 +53,35 @@ MainWindow::MainWindow(QWidget *parent) :
 	stopRecordAct->setStatusTip(tr("Stop recording video"));
 	connect(stopRecordAct, &QAction::triggered, this, &MainWindow::stopRecord);
 
+    bitRateHighAct = new QAction(tr("High Bitrate"), this);
+    bitRateHighAct->setStatusTip(tr("Set high bit rate"));
+    bitRateHighAct->setEnabled(false);
+    connect(bitRateHighAct, &QAction::triggered, this, &MainWindow::setHighBitRate);
+
+    bitRateLowAct = new QAction(tr("Low Bitrate"), this);
+    bitRateLowAct->setStatusTip(tr("Set low bit rate"));
+    connect(bitRateLowAct, &QAction::triggered, this, &MainWindow::setLowBitRate);
+
 	videoMenu = menuBar()->addMenu(tr("&Video"));
 	videoMenu->addAction(startRecordAct);
 	//videoMenu->addAction(pauseRecordAct);
 	videoMenu->addAction(stopRecordAct);
+    videoMenu->addAction(bitRateHighAct);
+    videoMenu->addAction(bitRateLowAct);
 
     fpsLabel->setText("FPS: ");
-    fpsLabel->setGeometry(20, 10, 100, 100);
+    fpsLabel->setGeometry(20, 20, 100, 100);
     fpsLabel->setStyleSheet("QLabel { color : white; }");
     fpsLabel->show();
     fpsLabel->activateWindow();
     fpsLabel->raise();
+
+    timerLabel->setText("00:00:00.000");
+    timerLabel->setGeometry(20, 40, 100, 100);
+    timerLabel->setStyleSheet("QLabel { color : white; }");
+    timerLabel->show();
+    timerLabel->activateWindow();
+    timerLabel->raise();
 
 	videoRecorder->start();
 
@@ -89,6 +103,7 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
 	videoRecorder->stopRecord();
+    videoRecorder->terminate();
 	videoRecorder->wait();
 
 	delete videoRecorder;
@@ -100,8 +115,7 @@ MainWindow::~MainWindow()
 	delete exitAct;
     delete fileMenu;
 
-	delete startRecordAct;
-	delete pauseRecordAct;
+    delete startRecordAct;
 	delete stopRecordAct;
 	delete videoMenu;
 }
@@ -109,6 +123,7 @@ MainWindow::~MainWindow()
 void MainWindow::update()
 {
     fpsLabel->setText("FPS: " + QString::number(videoRecorder->getFps()));
+    timerLabel->setText(QDateTime::fromMSecsSinceEpoch(videoRecorder->getVideoLength()).toUTC().toString("hh:mm:ss.zzz"));
 }
 
 void MainWindow::resizeEvent(QResizeEvent* event)
@@ -141,7 +156,7 @@ void MainWindow::startRecord()
 	if (videoRecorder->isRecording())
 	{
 		videoRecorder->pauseRecord();
-		startRecordAct->setText("Record");
+        startRecordAct->setText("Resume");
 	}
 	else
 	{
@@ -153,4 +168,19 @@ void MainWindow::startRecord()
 void MainWindow::stopRecord()
 {
 	videoRecorder->stopRecord();
+    startRecordAct->setText("Record");
+}
+
+void MainWindow::setHighBitRate()
+{
+    videoRecorder->setBitRate(5000000);
+    bitRateHighAct->setEnabled(false);
+    bitRateLowAct->setEnabled(true);
+}
+
+void MainWindow::setLowBitRate()
+{
+    videoRecorder->setBitRate(400000);
+    bitRateHighAct->setEnabled(true);
+    bitRateLowAct->setEnabled(false);
 }

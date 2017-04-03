@@ -41,12 +41,9 @@ LIBS += -lshell32 \
     -lavutil \
     -lswscale \
 
-#RESOURCES += shaders.qrc
-
 FORMS +=
 
-# Fix this
-#DEFINES += _CRTDBG_MAP_ALLOC
+DEFINES += _CRTDBG_MAP_ALLOC
 
 RESOURCES += \
     shaders.qrc
