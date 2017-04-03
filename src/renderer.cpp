@@ -44,7 +44,7 @@ qint64 Renderer::getLastFrameBufferUpdateTime()
 void Renderer::updateFrameBuffer()
 {
 	//makeCurrent();
-	frameBuffer = grabFramebuffer();
+    //frameBuffer = grabFramebuffer();
 	//doneCurrent();
     lastFrameBufferUpdateTime = QDateTime::currentMSecsSinceEpoch();
 
