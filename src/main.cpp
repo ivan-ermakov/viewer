@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
     installCrashHandler();
 
     QApplication app(argc, argv);
+    app.setAttribute(Qt::AA_ShareOpenGLContexts ,true);
 
     QSurfaceFormat format;
     format.setDepthBufferSize(24);

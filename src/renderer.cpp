@@ -19,7 +19,8 @@ Renderer::Renderer(QWidget *parent) :
     translation(0, 0, -5),
     lightColor(Qt::white),
     modelColor(Qt::white),
-    lastFrameBufferUpdateTime(QDateTime::currentMSecsSinceEpoch())
+    lastFrameBufferUpdateTime(QDateTime::currentMSecsSinceEpoch()),
+    pixBufObj(new QOpenGLBuffer(QOpenGLBuffer::PixelPackBuffer))
 {}
 
 Renderer::~Renderer()
@@ -43,9 +44,19 @@ qint64 Renderer::getLastFrameBufferUpdateTime()
 
 void Renderer::updateFrameBuffer()
 {
-	//makeCurrent();
-    //frameBuffer = grabFramebuffer();
-	//doneCurrent();
+    unsigned char* fb = (unsigned char*) pixBufObj->map(QOpenGLBuffer::ReadOnly);
+    if (!fb)
+    {
+        qDebug() << "fb: fail\n";
+        return;
+    }
+
+    frameBuffer.fromData(fb, geometry().width() * geometry().height() * 4);
+    pixBufObj->unmap();
+    pixBufObj->bind();
+    grabFramebuffer();
+    pixBufObj->release();
+
     lastFrameBufferUpdateTime = QDateTime::currentMSecsSinceEpoch();
 
 	recordFrame();
@@ -200,6 +211,8 @@ void Renderer::initializeGL()
 
     mdl = new Model();
 
+    pixBufObj->create();
+
     // Use QBasicTimer because its faster than QTimer
     timer.start(12, this);
 }
@@ -217,6 +230,10 @@ void Renderer::resizeGL(int w, int h)
 
     // Set perspective projection
     projection.perspective(fov, aspect, zNear, zFar);
+
+    pixBufObj->bind();
+    pixBufObj->allocate(w * h * 4);
+    pixBufObj->release();
 }
 
 void Renderer::paintGL()

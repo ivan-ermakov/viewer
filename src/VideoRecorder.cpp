@@ -136,12 +136,15 @@ void VideoRecorder::run()
                         frameLength = 1000 / vw->getFps();
 
                     videoLength += frameLength;
-                    QImage img = QImage("data/0.png"); //targetWidget->getFrameBuffer();
+
+                    QImage img = targetWidget->getFrameBuffer();
+
                     QPainter p(&img);
                     p.setPen(QPen(Qt::white));
                     p.setFont(QFont("Times", 14, QFont::Bold));
                     p.drawText(QPoint(40, 40), QDateTime::fromMSecsSinceEpoch(videoLength).toUTC().toString("hh:mm:ss.zzz"));
                     p.end();
+
                     vw->writeVideoFrame(img, frameLength);
                     qDebug() << "VR\t" << frameLength << " ms\n";
                 }
