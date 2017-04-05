@@ -56,7 +56,7 @@ void Renderer::updateFrameBuffer()
         frameBufferRead = true;
         glReadPixels(0, 0, geometry().width(), geometry().height(), GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         pixBufObj->release();
-        QTimer::singleShot(1, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
+        QTimer::singleShot(0, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
         return;
     }
 
@@ -65,17 +65,10 @@ void Renderer::updateFrameBuffer()
     {
         qDebug() << "fb: fail\n";
         pixBufObj->release();
-        QTimer::singleShot(1, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
+        QTimer::singleShot(0, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
         return;
     }
-    else
-    {
-        qDebug() << "fb: mapped\n" << geometry().width() * geometry().height() << "\n";
-        //frameBufferRead = false;
-    }
 
-    //grabFramebuffer();
-    //
     frameBuffer = QImage(fb, geometry().width(), geometry().height(), QImage::Format_RGB32).mirrored();
     /*if (!frameBuffer.loadFromData(fb, geometry().width() * geometry().height() * 4, QImage::Format_RGB32))
     {
@@ -92,11 +85,10 @@ void Renderer::updateFrameBuffer()
     if (frameBuffer.isNull())
     {
         qDebug() << "fb: null frame\n";
-        QTimer::singleShot(1, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
+        QTimer::singleShot(0, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
         return;
     }
 
-    //glReadPixels(0, 0, geometry().width(), geometry().height(), GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
     pixBufObj->release();
 
     //frameBuffer = grabFramebuffer();
@@ -281,9 +273,9 @@ void Renderer::resizeGL(int w, int h)
     // Set perspective projection
     projection.perspective(fov, aspect, zNear, zFar);
 
-    /*pixBufObj->bind();
+    pixBufObj->bind();
     pixBufObj->allocate(w * h * 4);
-    pixBufObj->release();*/
+    pixBufObj->release();
 }
 
 void Renderer::paintGL()
