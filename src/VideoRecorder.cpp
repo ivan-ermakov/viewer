@@ -9,16 +9,16 @@
 #include "MainWindow.h"
 
 VideoRecorder::VideoRecorder(QObject* parent, Renderer* targetWidget_) :
-    curStatus(VIDEO_STATUS_STOP),
-	fps(0),
-    lastSecondFrameCount(0),
-	frameReady(false),
-	lastFrameTime(0),
-	lastFpsTime(0),
-    videoLength(0),
+    m_currentStatus(VIDEO_STATUS_STOP),
+    m_fps(0),
+    m_lastSecondFrameCount(0),
+    m_frameReady(false),
+    m_lastFrameTime(0),
+    m_lastFpsTime(0),
+    m_videoLength(0),
 	QThread(parent),
-	targetWidget(targetWidget_),
-    vw(new VideoWriter(1920, 1080, 25, 5000000)) // , AV_CODEC_ID_RAWVIDEO
+    m_targetWidget(targetWidget_),
+    m_videoWriter(new VideoWriter(1920, 1080, 25, 5000000))
 {
 	VideoWriter::initAv();
 
@@ -28,82 +28,77 @@ VideoRecorder::VideoRecorder(QObject* parent, Renderer* targetWidget_) :
 
 VideoRecorder::~VideoRecorder()
 {
-    if (vw->isOpen())
-        vw->close();
+    if (m_videoWriter->isOpen())
+        m_videoWriter->close();
 
-	delete vw;
-	vw = nullptr;
+    delete m_videoWriter;
+    m_videoWriter = nullptr;
 }
 
  int VideoRecorder::getFps()
  {
-     return fps;
+     return m_fps;
  }
 
  qint64 VideoRecorder::getVideoLength()
  {
-    return videoLength;
+    return m_videoLength;
  }
 
  int VideoRecorder::getBitRate()
  {
-     return vw->getBitRate();
+     return m_videoWriter->getBitRate();
  }
 
  bool VideoRecorder::setBitRate(int bitRate)
  {
-    return vw->setBitRate(bitRate);
+    return m_videoWriter->setBitRate(bitRate);
  }
 
 void VideoRecorder::startRecord()
 {
-    if (curStatus == VIDEO_STATUS_STOP)
+    if (m_currentStatus == VIDEO_STATUS_STOP)
 	{
-        lastFrameTime = 0;//QDateTime::currentMSecsSinceEpoch();
-        lastFpsTime = lastFrameTime;
-        videoLength = 0;
+        m_lastFrameTime = 0; // QDateTime::currentMSecsSinceEpoch();
+        m_lastFpsTime = m_lastFrameTime;
+        m_videoLength = 0;
 
-		frameTimer.start();
+        m_frameTimer.start();
 	}
-    else if (curStatus == VIDEO_STATUS_PAUSE)
+    else if (m_currentStatus == VIDEO_STATUS_PAUSE)
 	{
-		lastFrameTime += frameTimer.elapsed() - pauseTime;
-		lastFpsTime += frameTimer.elapsed() - pauseTime;
+        m_lastFrameTime += m_frameTimer.elapsed() - m_pauseTime;
+        m_lastFpsTime += m_frameTimer.elapsed() - m_pauseTime;
 	}
 
-    lastSecondFrameCount = 0;
-    curStatus = VIDEO_STATUS_RECORD;
+    m_lastSecondFrameCount = 0;
+    m_currentStatus = VIDEO_STATUS_RECORD;
 
-	frameReady = false;
+    m_frameReady = false;
 	updateFrameBuffer();
 }
 
 void VideoRecorder::pauseRecord()
 {
-    curStatus = VIDEO_STATUS_PAUSE;
-	pauseTime = frameTimer.elapsed();
-    fps = 0;
+    m_currentStatus = VIDEO_STATUS_PAUSE;
+    m_pauseTime = m_frameTimer.elapsed();
+    m_fps = 0;
 }
 
 void VideoRecorder::stopRecord()
 {
-    curStatus = VIDEO_STATUS_STOP;
-    fps = 0;
+    m_currentStatus = VIDEO_STATUS_STOP;
+    m_fps = 0;
 }
 
 bool VideoRecorder::isRecording()
 {
-    return curStatus == VIDEO_STATUS_RECORD;
+    return m_currentStatus == VIDEO_STATUS_RECORD;
 }
 
 void VideoRecorder::terminate()
 {
-    curStatus = VIDEO_STATUS_TERMINATE;
-}
-
-bool VideoRecorder::needNextFrame()
-{
-	return true; //  curTime >= lastFrameTime.addMSecs(1000 / vw->getFps());
+    m_currentStatus = VIDEO_STATUS_TERMINATE;
 }
 
 void VideoRecorder::run()
@@ -112,59 +107,59 @@ void VideoRecorder::run()
     qint64 frameLength;
     qint64 frameDelay;
 
-    for (; curStatus != VIDEO_STATUS_TERMINATE;)
+    for (; m_currentStatus != VIDEO_STATUS_TERMINATE;)
     {
-        switch (curStatus)
+        switch (m_currentStatus)
         {
         case VIDEO_STATUS_RECORD:
-			if (!vw->isOpen())
+            if (!m_videoWriter->isOpen())
             {
-                vw->open("video");
-                frameDelay = 1000 / vw->getFps();
+                m_videoWriter->open("video");
+                frameDelay = 1000 / m_videoWriter->getFps();
             }
 
-            curTime = frameTimer.elapsed(); // targetWidget->getLastFrameBufferUpdateTime()
+            curTime = m_frameTimer.elapsed(); // targetWidget->getLastFrameBufferUpdateTime()
 
-            if(frameReady && curTime >= lastFrameTime + frameDelay || videoLength == 0)
+            if(m_frameReady && curTime >= m_lastFrameTime + frameDelay || m_videoLength == 0)
             {
                 //frameReady = false;
 				updateFrameBuffer();
 				{
 					//QMutexLocker l(&mtx);
-                    frameLength = curTime - lastFrameTime;
+                    frameLength = curTime - m_lastFrameTime;
                     if (frameLength < 0)
-                        frameLength = 1000 / vw->getFps();
+                        frameLength = 1000 / m_videoWriter->getFps();
 
-                    videoLength += frameLength;
+                    m_videoLength += frameLength;
 
-                    QImage img = targetWidget->getFrameBuffer();
+                    QImage img = m_targetWidget->getFrameBuffer();
 
                     QPainter p(&img);
                     p.setPen(QPen(Qt::white));
                     p.setFont(QFont("Times", 14, QFont::Bold));
-                    p.drawText(QPoint(40, 40), QDateTime::fromMSecsSinceEpoch(videoLength).toUTC().toString("hh:mm:ss.zzz"));
+                    p.drawText(QPoint(40, 40), QDateTime::fromMSecsSinceEpoch(m_videoLength).toUTC().toString("hh:mm:ss.zzz"));
                     p.end();
 
-                    vw->writeVideoFrame(img, frameLength);
+                    m_videoWriter->writeVideoFrame(img, frameLength);
                     qDebug() << "VR\t" << frameLength << " ms\n";
                 }
-                lastFrameTime = curTime;
+                m_lastFrameTime = curTime;
 
-				if (curTime >= lastFpsTime + 1000)
+                if (curTime >= m_lastFpsTime + 1000)
 				{
-                    fps = lastSecondFrameCount;
-                    lastSecondFrameCount = 0;
-					lastFpsTime = curTime;
+                    m_fps = m_lastSecondFrameCount;
+                    m_lastSecondFrameCount = 0;
+                    m_lastFpsTime = curTime;
 				}
                 else
-                    ++lastSecondFrameCount;
+                    ++m_lastSecondFrameCount;
             }
             break;
 
         case VIDEO_STATUS_STOP:
-            if (vw->isOpen())
+            if (m_videoWriter->isOpen())
             {
-                vw->close();
+                m_videoWriter->close();
             }
         }
 	}
@@ -172,5 +167,5 @@ void VideoRecorder::run()
 
 void VideoRecorder::recordFrame()
 {
-    frameReady = true;
+    m_frameReady = true;
 }

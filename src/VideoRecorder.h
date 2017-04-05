@@ -32,8 +32,7 @@ public:
 	void stopRecord();
     void terminate();
 
-	bool isRecording();
-	bool needNextFrame();
+    bool isRecording();
 
     int getFps();
     qint64 getVideoLength();
@@ -44,21 +43,20 @@ public:
 private:
     void run() override;
 
-	Status curStatus;
-	int fps;
-    int lastSecondFrameCount;
+    Status m_currentStatus;
+    int m_fps;
+    int m_lastSecondFrameCount;
 
-	bool frameReady;
+    bool m_frameReady;
 
-	Renderer* targetWidget;
-	VideoWriter* vw;
+    Renderer* m_targetWidget;
+    VideoWriter* m_videoWriter;
 
-	QMutex mtx;
-	qint64 lastFrameTime;
-	qint64 lastFpsTime;
-	qint64 pauseTime;
-    qint64 videoLength;
-    QElapsedTimer frameTimer;
+    qint64 m_lastFrameTime;
+    qint64 m_lastFpsTime;
+    qint64 m_pauseTime;
+    qint64 m_videoLength;
+    QElapsedTimer m_frameTimer;
 
 signals:
 	void updateFrameBuffer();

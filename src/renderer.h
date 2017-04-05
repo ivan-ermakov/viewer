@@ -47,31 +47,31 @@ protected:
     void paintGL() override;
 
 private:
-    QBasicTimer timer;
-    QOpenGLShaderProgram program;
-    Model* mdl;
+    QBasicTimer m_timer;
+    QOpenGLShaderProgram m_ShaderProgram;
+    Model* m_model;
 
-    QMatrix4x4 modelView;
-    QMatrix4x4 projection;
+    QMatrix4x4 m_modelView;
+    QMatrix4x4 m_projection;
 
-    QVector2D mousePressPosition;
-    QVector3D rotationAxis;
-    qreal angularSpeed;
-    QQuaternion rotation;
-    QVector2D mouseLastPosition;
+    QVector2D m_mousePressPosition;
+    QVector3D m_rotationAxis;
+    qreal m_angularSpeed;
+    QQuaternion m_rotation;
+    QVector2D m_mouseLastPosition;
 
-    QVector3D translation;
-    qreal translationSpeed;
-    qreal scale;
+    QVector3D m_translation;
+    qreal m_translationSpeed;
+    qreal m_scale;
 
-    QColor modelColor;
-    QColor lightColor;
+    QColor m_modelColor;
+    QColor m_lightColor;
 
-	QImage frameBuffer;
-    qint64 lastFrameBufferUpdateTime;
-    QOpenGLBuffer* pixBufObj;
-    bool frameBufferRead;
-    bool frameBufUpdate;
+    QImage m_frameBuffer;
+    qint64 m_lastFrameBufferUpdateTime;
+    QOpenGLBuffer* m_pixBufObj;
+    bool m_frameBufferRead;
+    bool m_frameBufUpdate;
 
 signals:
 	void recordFrame();

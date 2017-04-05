@@ -60,23 +60,23 @@ private:
 	void fillYuvImage(AVFrame *pict, int frame_index); // prepare a dummy image
 
 
-	int width;
-	int height;
-	int fps;
-	int bitRate;
-	int frameCount;
-	AVPixelFormat pixelFormat;
-	AVCodecID codecId;
+    int m_width;
+    int m_height;
+    int m_fps;
+    int m_bitRate;
+    int m_frameCount;
+    AVPixelFormat m_pixelFormat;
+    AVCodecID m_codecId;
 
-	AVFormatContext* formatContext;
-	AVOutputFormat* outputFormat;
-	AVStream* videoStream;
+    AVFormatContext* m_formatContext;
+    AVOutputFormat* m_outputFormat;
+    AVStream* m_videoStream;
 	
-	AVFrame* videoFrame; // Target format video frame
+    AVFrame* m_videoFrame; // Target format video frame
 
-	AVFrame* imgFrame; // Temporary conversion frame
-	SwsContext* imgConversionContext; // Conversion context
-	int swsFlags;
+    AVFrame* m_imgFrame; // Temporary conversion frame
+    SwsContext* m_imgConversionContext; // Conversion context
+    int m_swsFlags;
 };
 
 #endif // VIDEOWRITER_H

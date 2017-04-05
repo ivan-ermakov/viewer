@@ -12,17 +12,17 @@
 
 Renderer::Renderer(QWidget *parent) :
     QOpenGLWidget(parent),
-    mdl(nullptr),
-    angularSpeed(0),
-    translationSpeed(0.005),
-    scale(1),
-    translation(0, 0, -5),
-    lightColor(Qt::white),
-    modelColor(Qt::white),
-    lastFrameBufferUpdateTime(QDateTime::currentMSecsSinceEpoch()),
-    pixBufObj(new QOpenGLBuffer(QOpenGLBuffer::PixelPackBuffer)),
-    frameBufferRead(false),
-    frameBufUpdate(false)
+    m_model(nullptr),
+    m_angularSpeed(0),
+    m_translationSpeed(0.005),
+    m_scale(1),
+    m_translation(0, 0, -5),
+    m_lightColor(Qt::white),
+    m_modelColor(Qt::white),
+    m_lastFrameBufferUpdateTime(QDateTime::currentMSecsSinceEpoch()),
+    m_pixBufObj(new QOpenGLBuffer(QOpenGLBuffer::PixelPackBuffer)),
+    m_frameBufferRead(false),
+    m_frameBufUpdate(false)
 {}
 
 Renderer::~Renderer()
@@ -30,72 +30,72 @@ Renderer::~Renderer()
     // Make sure the context is current when deleting the texture
     // and the buffers.
     makeCurrent();
-    delete mdl;
-    delete pixBufObj;
+    delete m_model;
+    delete m_pixBufObj;
     doneCurrent();
 }
 
 QImage& Renderer::getFrameBuffer()
 {
-	return frameBuffer;
+    return m_frameBuffer;
 }
 
 qint64 Renderer::getLastFrameBufferUpdateTime()
 {
-    return lastFrameBufferUpdateTime;
+    return m_lastFrameBufferUpdateTime;
 }
 
 void Renderer::updateFrameBuffer()
 {
-    frameBufUpdate = true;
+    m_frameBufUpdate = true;
 
-    pixBufObj->bind();
+    m_pixBufObj->bind();
 
-    if (!frameBufferRead)
+    if (!m_frameBufferRead)
     {
-        frameBufferRead = true;
+        m_frameBufferRead = true;
         glReadPixels(0, 0, geometry().width(), geometry().height(), GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        pixBufObj->release();
+        m_pixBufObj->release();
         QTimer::singleShot(0, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
         return;
     }
 
-    unsigned char* fb = (unsigned char*) pixBufObj->map(QOpenGLBuffer::ReadOnly);
+    unsigned char* fb = (unsigned char*) m_pixBufObj->map(QOpenGLBuffer::ReadOnly);
     if (!fb)
     {
         qDebug() << "fb: fail\n";
-        pixBufObj->release();
+        m_pixBufObj->release();
         QTimer::singleShot(0, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
         return;
     }
 
-    frameBuffer = QImage(fb, geometry().width(), geometry().height(), QImage::Format_RGB32).mirrored();
+    m_frameBuffer = QImage(fb, geometry().width(), geometry().height(), QImage::Format_RGB32).mirrored();
     /*if (!frameBuffer.loadFromData(fb, geometry().width() * geometry().height() * 4, QImage::Format_RGB32))
     {
         qDebug() << "Failed to load image from fb\n";
         frameBufferRead = false;
     }*/
 
-    if (!pixBufObj->unmap())
+    if (!m_pixBufObj->unmap())
     {
         qDebug() << "FrameBuffer: failed unmap\n";
         return;
     }
 
-    if (frameBuffer.isNull())
+    if (m_frameBuffer.isNull())
     {
         qDebug() << "fb: null frame\n";
         QTimer::singleShot(0, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
         return;
     }
 
-    pixBufObj->release();
+    m_pixBufObj->release();
 
     //frameBuffer = grabFramebuffer();
 
-    frameBufferRead = false;
+    m_frameBufferRead = false;
 
-    lastFrameBufferUpdateTime = QDateTime::currentMSecsSinceEpoch();
+    m_lastFrameBufferUpdateTime = QDateTime::currentMSecsSinceEpoch();
 
 	recordFrame();
 }
@@ -107,12 +107,12 @@ void Renderer::loadModel(QString fileName)
 
     if (mld->isReady())
     {
-        if (mdl)
-            delete mdl;
-        mdl = nullptr;
+        if (m_model)
+            delete m_model;
+        m_model = nullptr;
 
-        mdl = new Model();
-        mld->read(mdl);
+        m_model = new Model();
+        mld->read(m_model);
     }
 
     //delete mld; deleteLater
@@ -120,12 +120,12 @@ void Renderer::loadModel(QString fileName)
 
 void Renderer::setLightColor(QColor c)
 {
-    lightColor = c;
+    m_lightColor = c;
 }
 
 void Renderer::setModelColor(QColor c)
 {
-    modelColor = c;
+    m_modelColor = c;
 }
 
 int Renderer::getWidth()
@@ -144,28 +144,28 @@ int Renderer::getHeight()
 
 QColor Renderer::getLightColor()
 {
-    return lightColor;
+    return m_lightColor;
 }
 
 QColor Renderer::getModelColor()
 {
-    return modelColor;
+    return m_modelColor;
 }
 
 void Renderer::mousePressEvent(QMouseEvent *e)
 {
-    mousePressPosition = QVector2D(e->localPos());
-    mouseLastPosition = mousePressPosition;
+    m_mousePressPosition = QVector2D(e->localPos());
+    m_mouseLastPosition = m_mousePressPosition;
 }
 
 void Renderer::mouseMoveEvent(QMouseEvent *e)
 {
-    QVector2D diff = QVector2D(e->localPos()) - mouseLastPosition;
-    mouseLastPosition = QVector2D(e->localPos());
+    QVector2D diff = QVector2D(e->localPos()) - m_mouseLastPosition;
+    m_mouseLastPosition = QVector2D(e->localPos());
 
     if (e->buttons() == Qt::MiddleButton && e->modifiers() & Qt::ShiftModifier)
     {
-        QVector3D v(mouseLastPosition - diff);
+        QVector3D v(m_mouseLastPosition - diff);
         QVector3D v2(QVector2D(e->localPos()));
 
         GLint vp[4];
@@ -174,16 +174,16 @@ void Renderer::mouseMoveEvent(QMouseEvent *e)
         v.setY(vp[3] - v.y());
         v2.setY(vp[3] - v2.y());
 
-        modelView.setToIdentity();
-        modelView.translate(translation);
-        modelView.rotate(rotation);
-        modelView.scale(scale);
+        m_modelView.setToIdentity();
+        m_modelView.translate(m_translation);
+        m_modelView.rotate(m_rotation);
+        m_modelView.scale(m_scale);
 
-        v.unproject(modelView, projection, QRect(vp[0], v[1], vp[2], vp[3]));
-        v2.unproject(modelView, projection, QRect(vp[0], v[1], vp[2], vp[3]));
+        v.unproject(m_modelView, m_projection, QRect(vp[0], v[1], vp[2], vp[3]));
+        v2.unproject(m_modelView, m_projection, QRect(vp[0], v[1], vp[2], vp[3]));
 
-        QVector3D d = (v2 - v) * translationSpeed;
-        translation += d;
+        QVector3D d = (v2 - v) * m_translationSpeed;
+        m_translation += d;
     }
     else if (e->buttons() == Qt::MiddleButton)
     {
@@ -192,7 +192,7 @@ void Renderer::mouseMoveEvent(QMouseEvent *e)
 
         qreal angle = diff.length() / 10.0;
 
-        rotation = QQuaternion::fromAxisAndAngle(n, angle) * rotation;
+        m_rotation = QQuaternion::fromAxisAndAngle(n, angle) * m_rotation;
     }
 
     update();
@@ -212,10 +212,10 @@ void Renderer::wheelEvent(QWheelEvent* e)
         d = (numDegrees / 15).y();
     }
 
-    scale *= 1 + d / 100.;
+    m_scale *= 1 + d / 100.;
 
-    if (scale < 0.05)
-        scale = 0.05;
+    if (m_scale < 0.05)
+        m_scale = 0.05;
 
     e->accept();
     update();
@@ -228,35 +228,35 @@ void Renderer::initializeGL()
     glClearColor(0, 0, 0, 1);
 
     // Compile vertex shader
-    if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/rsc/vshader.glsl"))
+    if (!m_ShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/rsc/vshader.glsl"))
         close();
 
     // Compile fragment shader
-    if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/rsc/fshader.glsl"))
+    if (!m_ShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/rsc/fshader.glsl"))
         close();
 
     // Link shader pipeline
-    if (!program.link())
+    if (!m_ShaderProgram.link())
         close();
 
     // Bind shader pipeline for use
-    if (!program.bind())
+    if (!m_ShaderProgram.bind())
         close();
 
     glEnable(GL_DEPTH_TEST); // Enable depth buffer
     glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
 
-    mdl = new Model();
+    m_model = new Model();
 
-    pixBufObj->create();
-    pixBufObj->setUsagePattern(QOpenGLBuffer::StaticRead);
-    pixBufObj->bind();
-    pixBufObj->allocate(geometry().width() * geometry().height() * 4);
-    pixBufObj->release();
+    m_pixBufObj->create();
+    m_pixBufObj->setUsagePattern(QOpenGLBuffer::StaticRead);
+    m_pixBufObj->bind();
+    m_pixBufObj->allocate(geometry().width() * geometry().height() * 4);
+    m_pixBufObj->release();
 
     // Use QBasicTimer because its faster than QTimer
-    timer.start(12, this);
+    m_timer.start(12, this);
 }
 
 void Renderer::resizeGL(int w, int h)
@@ -268,14 +268,14 @@ void Renderer::resizeGL(int w, int h)
     const qreal zNear = 1.0, zFar = 200.0, fov = 45.0;
 
     // Reset projection
-    projection.setToIdentity();
+    m_projection.setToIdentity();
 
     // Set perspective projection
-    projection.perspective(fov, aspect, zNear, zFar);
+    m_projection.perspective(fov, aspect, zNear, zFar);
 
-    pixBufObj->bind();
-    pixBufObj->allocate(w * h * 4);
-    pixBufObj->release();
+    m_pixBufObj->bind();
+    m_pixBufObj->allocate(w * h * 4);
+    m_pixBufObj->release();
 }
 
 void Renderer::paintGL()
@@ -285,28 +285,28 @@ void Renderer::paintGL()
     // Clear color and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    if (!mdl)
+    if (!m_model)
         return;
 
     // Calculate model view transformation
-    modelView.setToIdentity();
-    modelView.translate(translation);
-    modelView.translate(mdl->pivot);
-    modelView.rotate(rotation);
-    modelView.translate(-mdl->pivot);
-    modelView.scale(scale);
+    m_modelView.setToIdentity();
+    m_modelView.translate(m_translation);
+    m_modelView.translate(m_model->pivot);
+    m_modelView.rotate(m_rotation);
+    m_modelView.translate(-m_model->pivot);
+    m_modelView.scale(m_scale);
 
     // Set modelview-projection matrix
-    program.setUniformValue("m_projection", projection);
-    program.setUniformValue("m_model_view", modelView);
-    program.setUniformValue("mvp_matrix", projection * modelView);
-    program.setUniformValue("lightPos", QVector3D(0., 0., -1.));
-    program.setUniformValue("lightColor", QVector4D(lightColor.redF(), lightColor.greenF(), lightColor.blueF(), 1.));
-    program.setUniformValue("modelColor", QVector4D(modelColor.redF(), modelColor.greenF(), modelColor.blueF(), 1.));
+    m_ShaderProgram.setUniformValue("m_projection", m_projection);
+    m_ShaderProgram.setUniformValue("m_model_view", m_modelView);
+    m_ShaderProgram.setUniformValue("mvp_matrix", m_projection * m_modelView);
+    m_ShaderProgram.setUniformValue("lightPos", QVector3D(0., 0., -1.));
+    m_ShaderProgram.setUniformValue("lightColor", QVector4D(m_lightColor.redF(), m_lightColor.greenF(), m_lightColor.blueF(), 1.));
+    m_ShaderProgram.setUniformValue("modelColor", QVector4D(m_modelColor.redF(), m_modelColor.greenF(), m_modelColor.blueF(), 1.));
     // Use texture
 
     // Draw
-    mdl->draw(&program);
+    m_model->draw(&m_ShaderProgram);
 
 	doneCurrent();
 
