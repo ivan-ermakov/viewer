@@ -56,7 +56,7 @@ void Renderer::updateFrameBuffer()
         frameBufferRead = true;
         glReadPixels(0, 0, geometry().width(), geometry().height(), GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         pixBufObj->release();
-        QTimer::singleShot(12, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
+        QTimer::singleShot(1, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
         return;
     }
 
@@ -65,7 +65,7 @@ void Renderer::updateFrameBuffer()
     {
         qDebug() << "fb: fail\n";
         pixBufObj->release();
-        QTimer::singleShot(12, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
+        QTimer::singleShot(1, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
         return;
     }
     else
@@ -92,7 +92,7 @@ void Renderer::updateFrameBuffer()
     if (frameBuffer.isNull())
     {
         qDebug() << "fb: null frame\n";
-        QTimer::singleShot(12, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
+        QTimer::singleShot(1, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
         return;
     }
 
