@@ -47,3 +47,5 @@ DEFINES += _CRTDBG_MAP_ALLOC __STDC_CONSTANT_MACROS
 
 RESOURCES += \
     shaders.qrc
+
+CONFIG += console

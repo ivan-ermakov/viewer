@@ -20,7 +20,9 @@ Renderer::Renderer(QWidget *parent) :
     lightColor(Qt::white),
     modelColor(Qt::white),
     lastFrameBufferUpdateTime(QDateTime::currentMSecsSinceEpoch()),
-    pixBufObj(new QOpenGLBuffer(QOpenGLBuffer::PixelPackBuffer))
+    pixBufObj(new QOpenGLBuffer(QOpenGLBuffer::PixelPackBuffer)),
+    frameBufferRead(false),
+    frameBufUpdate(false)
 {}
 
 Renderer::~Renderer()
@@ -29,6 +31,7 @@ Renderer::~Renderer()
     // and the buffers.
     makeCurrent();
     delete mdl;
+    delete pixBufObj;
     doneCurrent();
 }
 
@@ -44,18 +47,61 @@ qint64 Renderer::getLastFrameBufferUpdateTime()
 
 void Renderer::updateFrameBuffer()
 {
+    frameBufUpdate = true;
+
+    pixBufObj->bind();
+
+    if (!frameBufferRead)
+    {
+        frameBufferRead = true;
+        glReadPixels(0, 0, geometry().width(), geometry().height(), GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        pixBufObj->release();
+        QTimer::singleShot(12, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
+        return;
+    }
+
     unsigned char* fb = (unsigned char*) pixBufObj->map(QOpenGLBuffer::ReadOnly);
     if (!fb)
     {
         qDebug() << "fb: fail\n";
+        pixBufObj->release();
+        QTimer::singleShot(12, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
+        return;
+    }
+    else
+    {
+        qDebug() << "fb: mapped\n" << geometry().width() * geometry().height() << "\n";
+        //frameBufferRead = false;
+    }
+
+    //grabFramebuffer();
+    //
+    frameBuffer = QImage(fb, geometry().width(), geometry().height(), QImage::Format_RGB32).mirrored();
+    /*if (!frameBuffer.loadFromData(fb, geometry().width() * geometry().height() * 4, QImage::Format_RGB32))
+    {
+        qDebug() << "Failed to load image from fb\n";
+        frameBufferRead = false;
+    }*/
+
+    if (!pixBufObj->unmap())
+    {
+        qDebug() << "FrameBuffer: failed unmap\n";
         return;
     }
 
-    frameBuffer.fromData(fb, geometry().width() * geometry().height() * 4);
-    pixBufObj->unmap();
-    pixBufObj->bind();
-    grabFramebuffer();
+    if (frameBuffer.isNull())
+    {
+        qDebug() << "fb: null frame\n";
+        QTimer::singleShot(12, Qt::PreciseTimer, this, &Renderer::updateFrameBuffer);
+        return;
+    }
+
+    //glReadPixels(0, 0, geometry().width(), geometry().height(), GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
     pixBufObj->release();
+
+    //frameBuffer = grabFramebuffer();
+
+    frameBufferRead = false;
 
     lastFrameBufferUpdateTime = QDateTime::currentMSecsSinceEpoch();
 
@@ -212,6 +258,10 @@ void Renderer::initializeGL()
     mdl = new Model();
 
     pixBufObj->create();
+    pixBufObj->setUsagePattern(QOpenGLBuffer::StaticRead);
+    pixBufObj->bind();
+    pixBufObj->allocate(geometry().width() * geometry().height() * 4);
+    pixBufObj->release();
 
     // Use QBasicTimer because its faster than QTimer
     timer.start(12, this);
@@ -231,14 +281,15 @@ void Renderer::resizeGL(int w, int h)
     // Set perspective projection
     projection.perspective(fov, aspect, zNear, zFar);
 
-    pixBufObj->bind();
+    /*pixBufObj->bind();
     pixBufObj->allocate(w * h * 4);
-    pixBufObj->release();
+    pixBufObj->release();*/
 }
 
 void Renderer::paintGL()
 {
 	makeCurrent();
+
     // Clear color and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -247,8 +298,6 @@ void Renderer::paintGL()
 
     // Calculate model view transformation
     modelView.setToIdentity();
-    /*modelView.translate(translation);
-    modelView.rotate(rotation);*/
     modelView.translate(translation);
     modelView.translate(mdl->pivot);
     modelView.rotate(rotation);
@@ -262,14 +311,11 @@ void Renderer::paintGL()
     program.setUniformValue("lightPos", QVector3D(0., 0., -1.));
     program.setUniformValue("lightColor", QVector4D(lightColor.redF(), lightColor.greenF(), lightColor.blueF(), 1.));
     program.setUniformValue("modelColor", QVector4D(modelColor.redF(), modelColor.greenF(), modelColor.blueF(), 1.));
-
-
-    // Use texture unit 0 which contains cube.png
-    //program.setUniformValue("texture", 0);
+    // Use texture
 
     // Draw
     mdl->draw(&program);
-	//frameBuffer = grabFramebuffer();
+
 	doneCurrent();
 
 	//if (needNextFrame())

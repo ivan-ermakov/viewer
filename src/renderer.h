@@ -70,6 +70,8 @@ private:
 	QImage frameBuffer;
     qint64 lastFrameBufferUpdateTime;
     QOpenGLBuffer* pixBufObj;
+    bool frameBufferRead;
+    bool frameBufUpdate;
 
 signals:
 	void recordFrame();
