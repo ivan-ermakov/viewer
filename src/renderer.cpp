@@ -50,6 +50,8 @@ qint64 Renderer::getLastFrameBufferUpdateTime()
 
 void Renderer::updateFrameBuffer()
 {
+    // glFenceSync - maybe useful for sync
+
     m_frameBufUpdate = true;
 
     m_pixBufObj->bind();
