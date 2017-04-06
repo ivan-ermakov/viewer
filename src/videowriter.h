@@ -1,3 +1,5 @@
+// Transparent images
+
 #ifndef VIDEOWRITER_H
 #define VIDEOWRITER_H
 
@@ -6,7 +8,6 @@
 extern "C"
 {
 #include <libavformat/avformat.h>
-//include <libavcodec/avcodec.h>
 #include "libswscale/swscale.h"
 }
 
@@ -31,10 +32,8 @@ public:
 
     bool setBitRate(int);
 
-	//bool writeVideoFrame(std::string, int frames = 1);
-	//bool writeVideoFrame(const QImage&, int frames = 1);
 	bool writeVideoFrame(std::string, int64_t msec);
-	bool writeVideoFrame(const QImage&, int64_t msec);
+    bool writeVideoFrame(const QImage&, int64_t msec);
 
 private:
 	// Video Stream
@@ -51,7 +50,7 @@ private:
     bool writeVideoFrame(AVStream* st, AVFrame* frame, int64_t time);
 	bool writeBufferedFrames(AVStream*);
 
-	bool convertVideoFrame(AVCodecContext*, AVFrame*, AVFrame*); // Need optimize
+    bool convertVideoFrame(AVCodecContext*, AVFrame*, AVFrame*);
 	
 	bool frameReadImage(AVFrame*, const QImage&);
 	AVFrame* loadFrame(const QImage&);

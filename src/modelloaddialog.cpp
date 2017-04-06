@@ -17,8 +17,6 @@ ModelLoadDialog::ModelLoadDialog(QWidget *parent, QString fileName) :
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &ModelLoadDialog::update);
     timer->start(25);
-
-    //progress->setMaximum(mdlLoader->getMaxProgress()); Too early
 }
 
 bool ModelLoadDialog::isReady()

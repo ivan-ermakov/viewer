@@ -45,10 +45,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	startRecordAct->setStatusTip(tr("Start recording video"));
 	connect(startRecordAct, &QAction::triggered, this, &MainWindow::startRecord);
 
-	/*pauseRecordAct = new QAction(tr("&Pause"), this);
-	pauseRecordAct->setStatusTip(tr("Pause video"));
-	connect(pauseRecordAct, &QAction::triggered, videoRecorder, &VideoRecorder::pauseRecord);*/
-
 	stopRecordAct = new QAction(tr("&Stop"), this);
 	stopRecordAct->setStatusTip(tr("Stop recording video"));
 	connect(stopRecordAct, &QAction::triggered, this, &MainWindow::stopRecord);
@@ -63,8 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(bitRateLowAct, &QAction::triggered, this, &MainWindow::setLowBitRate);
 
 	videoMenu = menuBar()->addMenu(tr("&Video"));
-	videoMenu->addAction(startRecordAct);
-	//videoMenu->addAction(pauseRecordAct);
+    videoMenu->addAction(startRecordAct);
 	videoMenu->addAction(stopRecordAct);
     videoMenu->addAction(bitRateHighAct);
     videoMenu->addAction(bitRateLowAct);
@@ -83,21 +78,22 @@ MainWindow::MainWindow(QWidget *parent) :
     timerLabel->activateWindow();
     timerLabel->raise();
 
+    VideoWriter::initAv();
+    VideoWriter* vw = new VideoWriter(1920, 1080, 25, 5000000);
+    QImage img("data/0.png");
+    vw->open("test.avi");
+    vw->writeVideoFrame(img, 1000);
+    img = QImage("data/1.png");
+    vw->writeVideoFrame(img, 1000);
+    img = QImage("data/2.png");
+    vw->writeVideoFrame(img, 1000);
+    vw->close();
+    delete vw;
+
 	videoRecorder->start();
 
     QTimer* timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    timer->start(50);
-
-	/*VideoWriter vw;
-	vw.open("test");
-	vw.writeVideoFrame(QImage("data/0.png"), 1000);
-	vw.writeVideoFrame(QImage("data/1.png"), 1000);
-	vw.writeVideoFrame(QImage("data/2.png"), 1000);
-	vw.writeVideoFrame(QImage("data/3.png"), 1000);
-	vw.writeVideoFrame(QImage("data/4.png"), 1000);
-	vw.writeVideoFrame(QImage("data/4.jpg"), 1000);
-	vw.close();*/
 }
 
 MainWindow::~MainWindow()
@@ -128,7 +124,6 @@ void MainWindow::update()
 
 void MainWindow::resizeEvent(QResizeEvent* event)
 {
-    // Maybe swap
     QMainWindow::resizeEvent(event);
     renderer->setGeometry(QRect(0, 0, geometry().width(), geometry().height()));
 }

@@ -13,8 +13,6 @@
 
 #include "model.h"
 
-// Widget + Thread
-
 class ModelLoader : public QThread
 {
     Q_OBJECT

@@ -29,9 +29,12 @@ Renderer::~Renderer()
 {
     // Make sure the context is current when deleting the texture
     // and the buffers.
+
     makeCurrent();
+
     delete m_model;
     delete m_pixBufObj;
+
     doneCurrent();
 }
 
@@ -70,11 +73,6 @@ void Renderer::updateFrameBuffer()
     }
 
     m_frameBuffer = QImage(fb, geometry().width(), geometry().height(), QImage::Format_RGB32).mirrored();
-    /*if (!frameBuffer.loadFromData(fb, geometry().width() * geometry().height() * 4, QImage::Format_RGB32))
-    {
-        qDebug() << "Failed to load image from fb\n";
-        frameBufferRead = false;
-    }*/
 
     if (!m_pixBufObj->unmap())
     {
@@ -90,13 +88,8 @@ void Renderer::updateFrameBuffer()
     }
 
     m_pixBufObj->release();
-
-    //frameBuffer = grabFramebuffer();
-
     m_frameBufferRead = false;
-
     m_lastFrameBufferUpdateTime = QDateTime::currentMSecsSinceEpoch();
-
 	recordFrame();
 }
 
@@ -114,8 +107,6 @@ void Renderer::loadModel(QString fileName)
         m_model = new Model();
         mld->read(m_model);
     }
-
-    //delete mld; deleteLater
 }
 
 void Renderer::setLightColor(QColor c)
@@ -308,8 +299,5 @@ void Renderer::paintGL()
     // Draw
     m_model->draw(&m_ShaderProgram);
 
-	doneCurrent();
-
-	//if (needNextFrame())
-	//recordFrame(grabFramebuffer());
+    doneCurrent();
 }

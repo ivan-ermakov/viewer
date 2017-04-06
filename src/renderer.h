@@ -74,8 +74,7 @@ private:
     bool m_frameBufUpdate;
 
 signals:
-	void recordFrame();
-	void recordFrame(QImage&);
+    void recordFrame();
 
 public slots:
 	void updateFrameBuffer();

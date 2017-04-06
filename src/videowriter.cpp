@@ -44,7 +44,6 @@ VideoWriter::~VideoWriter()
 
 void VideoWriter::initAv()
 {
-	//avdevice_register_all();
 	avcodec_register_all();
 	av_register_all();
 }
@@ -58,15 +57,7 @@ bool VideoWriter::open(std::string fileName)
         qDebug("Could not deduce output format from file extension: using AVI.\n");
         m_outputFormat = av_guess_format("avi", nullptr, nullptr);
 		fileName += ".avi";
-	}
-
-    /*if (!m_outputFormat)
-	{
-		// MPEG - black frames appended to end
-        qDebug("Could not deduce output format from file extension: using MPEG.\n");
-        m_outputFormat = av_guess_format("mpeg", nullptr, nullptr);
-		fileName += ".mpeg";
-	}*/
+    }
 
     if (!m_outputFormat)
 	{
@@ -74,7 +65,7 @@ bool VideoWriter::open(std::string fileName)
 		return false;
 	}
 
-	/* allocate the output media context */
+    // allocate the output media context
     m_formatContext = avformat_alloc_context();
     if (!m_formatContext)
 	{
@@ -85,8 +76,7 @@ bool VideoWriter::open(std::string fileName)
     m_formatContext->oformat = m_outputFormat;
     _snprintf(m_formatContext->filename, sizeof(m_formatContext->filename), "%s", fileName.c_str());
 
-	/* add the audio and video streams using the default format codecs
-	and initialize the codecs */
+    // add the audio and video streams using the default format codecs and initialize the codecs
 
     if (m_codecId != AV_CODEC_ID_NONE)
         m_videoStream = openVideo(m_codecId);
@@ -96,22 +86,16 @@ bool VideoWriter::open(std::string fileName)
         m_codecId = m_outputFormat->video_codec;
 	}
 
-	/* set the output parameters (must be done even if no
-	parameters). */
-	// !!!!!
-    /*if (av_set_parameters(m_formatContext, nullptr) < 0) {
-	fprintf(stderr, "Invalid output format parameters\n");
-	exit(1);
-	}*/
+    // set the output parameters (must be done even if no parameters).
 
     av_dump_format(m_formatContext, 0, fileName.c_str(), 1);
 
-	/* now that all the parameters are set, we can open the audio and
-	video codecs and allocate the necessary encode buffers */
+    // now that all the parameters are set, we can open the audio and
+    // video codecs and allocate the necessary encode buffers
     if (!m_videoStream)
 		return false;
 
-	/* open the output file, if needed */
+    // open the output file, if needed
     if (!(m_outputFormat->flags & AVFMT_NOFILE))
 	{
         if (avio_open(&m_formatContext->pb, fileName.c_str(), AVIO_FLAG_WRITE) < 0)
@@ -121,7 +105,7 @@ bool VideoWriter::open(std::string fileName)
 		}
 	}
 
-	/* write the stream header, if any */
+    // write the stream header, if any
     avformat_write_header(m_formatContext, nullptr);
 
 	return true;
@@ -138,14 +122,14 @@ void VideoWriter::close()
 	* was freed on av_codec_close() */
     av_write_trailer(m_formatContext);
 
-	/* close each codec */
+    // close each codec
     if (m_videoStream)
 	{
         closeVideo(m_videoStream);
         m_videoStream = nullptr;
 	}
 
-	/* free the streams */
+    // free the streams
     for (int i = 0; (unsigned)i < m_formatContext->nb_streams; i++)
 	{
         av_freep(&m_formatContext->streams[i]->codec);
@@ -154,17 +138,15 @@ void VideoWriter::close()
 
     if (!(m_outputFormat->flags & AVFMT_NOFILE))
 	{
-		/* close the output file */
+        // close the output file
         avio_close(m_formatContext->pb);
 	}
 
     m_outputFormat = nullptr;
 
-	/* free the stream */
+    // free the stream
     av_free(m_formatContext);
     m_formatContext = nullptr;
-
-    //std::cout << "Written " << m_frameCount << " frames\n";
 }
 
 bool VideoWriter::isOpen()
@@ -190,27 +172,6 @@ bool VideoWriter::setBitRate(int bitRate_)
     m_bitRate = bitRate_;
     return true;
 }
-
-/*bool VideoWriter::writeVideoFrame(std::string fileName, int frames)
-{
-	return writeVideoFrame(QImage(QString::fromStdString(fileName)), frames);
-}
-
-bool VideoWriter::writeVideoFrame(const QImage& img, int frames)
-{
-	AVFrame* frame = loadFrame(img);
-	if (!frame)
-		return false;
-
-	// write interleaved audio and video frames
-    writeVideoFrames(m_videoStream, frame, frames);
-
-    writeBufferedFrames(m_videoStream);
-
-	freeFrame(frame);
-
-	return true;
-}*/
 
 bool VideoWriter::writeVideoFrame(std::string fileName, int64_t time)
 {
@@ -258,23 +219,14 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
     st->time_base.den = m_fps;
     st->codecpar->format = m_pixelFormat;
 
-	/*if (st->codecpar->codec_id == AV_CODEC_ID_MPEG1VIDEO) {
-	// Needed to avoid using macroblocks in which some coeffs overflow.
-	// This does not happen with normal video, it just happens here as
-	// the motion of the chroma plane does not match the luma plane.
-	st->codec->mb_decision = 2;
-	}*/
-
 	// some formats want stream headers to be separate
     if (m_formatContext->oformat->flags & AVFMT_GLOBALHEADER)
 		st->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
 	AVCodec* codec;
-	AVCodecContext* c;
+    AVCodecContext* c;
 
-	//c = st->codec;
-
-	/* find the video encoder */
+    // find the video encoder
 	codec = avcodec_find_encoder(st->codecpar->codec_id);
 	if (!codec)
 	{
@@ -293,16 +245,6 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 
 	avcodec_parameters_to_context(c, st->codecpar);
 
-	/*c->codec_type = st->codecpar->codec_type;
-	c->codec_id = st->codecpar->codec_id;
-
-	// put sample parameters
-	c->bit_rate = st->codecpar->bit_rate;
-
-	// resolution must be a multiple of two
-	c->width = st->codecpar->width;
-	c->height = st->codecpar->height;*/
-
 	// frames per second
 	c->time_base.num = st->time_base.num; // 1
     c->time_base.den = st->time_base.den; // m_fps
@@ -313,9 +255,7 @@ AVStream* VideoWriter::openVideo(AVCodecID codec_id)
 	* then gop_size is ignored and the output of encoder
 	* will always be I frame irrespective to gop_size
 	*/
-	c->gop_size = 12;
-	//c->max_b_frames = 1;
-	//c->pix_fmt = (AVPixelFormat) st->codecpar->format;
+    c->gop_size = 12;
 
 	// open the codec
 	if (avcodec_open2(c, codec, nullptr) < 0)
@@ -372,9 +312,7 @@ void VideoWriter::closeVideo(AVStream *st)
 	{
         sws_freeContext(m_imgConversionContext);
         m_imgConversionContext = nullptr;
-	}
-
-	//av_free(video_outbuf);
+    }
 }
 
 AVFrame* VideoWriter::allocateFrame(int w, int h, AVPixelFormat pixFmt)
@@ -391,9 +329,10 @@ AVFrame* VideoWriter::allocateFrame(int w, int h, AVPixelFormat pixFmt)
 	// the image can be allocated by any means and av_image_alloc() is
 	// just the most convenient way if av_malloc() is to be used
 
-	if (av_image_alloc(frame->data, frame->linesize, w, h, pixFmt, 32) < 0)
+    int ret = av_image_alloc(frame->data, frame->linesize, w, h, pixFmt, 32);
+    if (ret < 0)
 	{
-        qDebug() << "Could not allocate raw picture buffer\n";
+        qDebug() << "av_image_alloc " << ret << ": Could not allocate raw picture buffer\n";
 		return nullptr;
 	}
 
@@ -460,42 +399,24 @@ int VideoWriter::writeVideoFrame(AVStream* st, AVFrame* frame)
 		}
 
 		// if zero size, it means the image was buffered
-		if (gotPacket) // outSize?
+        if (gotPacket)
 		{
-			if (pkt.pts != AV_NOPTS_VALUE)
-			{
-				pkt.pts = av_rescale_q(pkt.pts, st->codec->time_base, st->time_base);
-				//pkt.pts = av_rescale_q(pkt.pts, st->time_base, st->codec->time_base);
-				//st->pts.val = pkt.pts;
-			}
+            if (pkt.pts != AV_NOPTS_VALUE)
+                pkt.pts = av_rescale_q(pkt.pts, st->codec->time_base, st->time_base);
 
-			if (pkt.dts != AV_NOPTS_VALUE)
-			{
-				pkt.dts = av_rescale_q(pkt.dts, st->codec->time_base, st->time_base);
-				//pkt.dts = av_rescale_q(pkt.dts, st->time_base, st->codec->time_base);
-			}
+            if (pkt.dts != AV_NOPTS_VALUE)
+                pkt.dts = av_rescale_q(pkt.dts, st->codec->time_base, st->time_base);
 
 			if (st->codec->coded_frame->key_frame)
 				pkt.flags |= AV_PKT_FLAG_KEY;
 
-			pkt.stream_index = st->index;
-
-			//pkt.data= video_outbuf;
-			//pkt.size= outSize;
+            pkt.stream_index = st->index;
 
 			// write the compressed frame in the media file
             ret = av_interleaved_write_frame(m_formatContext, &pkt);
-
-			//if (ret != 0)
-				//std::cerr << "av_interleaved_write_frame -> " << ret << "\n";
-
-			//std::cout << "Written frame" << outSize << "\n";
 		}
-		else
-		{
-			ret = 1;
-			//std::cout << "Delayed frame\n"; // or no more delayed frames
-		}
+        else
+            ret = 1;
 	}
 
 	if (ret < 0)
@@ -523,17 +444,6 @@ bool VideoWriter::writeVideoFrames(AVStream* st, AVFrame* frame, int frames)
 
 bool VideoWriter::writeVideoFrame(AVStream* st, AVFrame* frame, int64_t time)
 {
-    /*time += 1000 * av_stream_get_end_pts(st) * st->time_base.num / st->time_base.den;
-
-    for (; 1000 * av_stream_get_end_pts(st) * st->time_base.num / st->time_base.den < time;)
-	{
-		// write interleaved audio and video frames
-        if (writeVideoFrame(st, frame) < 0)
-			return false;
-    }
-
-    return true;*/
-
     return writeVideoFrames(st, frame, time * m_fps / 1000);
 }
 
@@ -561,9 +471,6 @@ bool VideoWriter::convertVideoFrame(AVCodecContext* c, AVFrame* srcFrame, AVFram
 
 	int ret = sws_scale(conversionContext, srcFrame->data, srcFrame->linesize, 0, srcFrame->height, dstFrame->data, dstFrame->linesize);
 
-	//if (ret != 0)
-		//std::cerr << "sws_scale -> " << ret << "\n";
-
 	sws_freeContext(conversionContext);
 
 	return ret > 0;
@@ -571,12 +478,6 @@ bool VideoWriter::convertVideoFrame(AVCodecContext* c, AVFrame* srcFrame, AVFram
 
 bool VideoWriter::frameReadImage(AVFrame* frame, const QImage& img)
 {
-	/*if (img.isNull())
-	{
-		std::cerr << "Reading Null QImage\n";
-		return false;
-	}*/
-
     if (!m_imgFrame || m_imgFrame->width != img.width() || m_imgFrame->height != img.height() || !m_imgConversionContext)
 	{
         freeFrame(m_imgFrame);
@@ -586,6 +487,7 @@ bool VideoWriter::frameReadImage(AVFrame* frame, const QImage& img)
 
         if (!m_imgFrame)
 		{
+            qDebug() << "frameReadImage: Failed to allocate frame\n";
             m_imgConversionContext = nullptr;
 			return false;
 		}
@@ -598,37 +500,28 @@ bool VideoWriter::frameReadImage(AVFrame* frame, const QImage& img)
 			return false;
 	}
 
-    memcpy(m_imgFrame->data[0], img.constBits(), img.width() * img.height() * 4);
+    //if (!img.hasAlphaChannel())
+        memcpy(m_imgFrame->data[0], img.constBits(), img.width() * img.height() * 4);
+    //else
+    /*{
+        QImage im = img.scaled(QSize(frame->width, frame->height));
+        int x, y;
+        QColor clr;
+
+        for (y = 0; y < im.height(); y++)
+        {
+            for (x = 0; x < im.width(); x++)
+            {
+                clr = im.pixelColor(QPoint(x, y));
+                frame->data[0][y * frame->linesize[0] + x * 3] = (uint8_t)clr.red() * clr.alpha() / 255;
+                frame->data[0][y * frame->linesize[0] + x * 3 + 1] = (uint8_t)clr.green() * clr.alpha() / 255;
+                frame->data[0][y * frame->linesize[0] + x * 3 + 2] = (uint8_t)clr.blue() * clr.alpha() / 255;
+            }
+        }
+    }*/
 
     if (sws_scale(m_imgConversionContext, m_imgFrame->data, m_imgFrame->linesize, 0, m_imgFrame->height, frame->data, frame->linesize) <= 0)
 		return false;
-
-	// Not always necessary
-	//QImage im = img.scaled(QSize(frame->width, frame->height));
-
-	/*int x, y;
-	QColor clr;
-
-	for (y = 0; y < im.height(); y++)
-	{
-		for (x = 0; x < im.width(); x++)
-		{
-			clr = im.pixelColor(QPoint(x, y));
-			frame->data[0][y * frame->linesize[0] + x * 3] = (uint8_t)clr.red() * clr.alpha() / 255;
-			frame->data[0][y * frame->linesize[0] + x * 3 + 1] = (uint8_t)clr.green() * clr.alpha() / 255;
-			frame->data[0][y * frame->linesize[0] + x * 3 + 2] = (uint8_t)clr.blue() * clr.alpha() / 255;
-		}
-	}*/
-
-	/*for (int i = 0; i < im.width() * im.height(); i++)
-	{
-		memcpy(&frame->data[0][i * 3], im.constBits() + i * 4, 3);
-	}*/
-
-	//memcpy(frame->data[0], im.constBits(), im.width() * im.height() * 4);
-	/*frame->data[0][y * frame->linesize[0] + x * 3] = (uint8_t)clr.red();
-	frame->data[0][y * frame->linesize[0] + x * 3 + 1] = (uint8_t)clr.green();
-	frame->data[0][y * frame->linesize[0] + x * 3 + 2] = (uint8_t)clr.blue();*/
 
 	return true;
 }
@@ -656,7 +549,7 @@ AVFrame* VideoWriter::loadFrame(const QImage& img)
 	int x, y;
 	QColor clr;
 
-	for (y = 0; y < img.height(); y++) // was frame->
+    for (y = 0; y < img.height(); y++)
 	{
 		for (x = 0; x < img.width(); x++)
 		{
@@ -676,10 +569,7 @@ AVFrame* VideoWriter::loadFrame(const std::string imageFileName)
 	AVInputFormat* inputFormat = av_find_input_format(imageFileName.c_str());
 
 	if (!inputFormat)
-	{
         qDebug() << "Cant find input format!\n";
-		//return nullptr;
-	}
 
 	if (avformat_open_input(&formatCtx, imageFileName.c_str(), inputFormat, nullptr) != 0)
 	{
@@ -691,19 +581,12 @@ AVFrame* VideoWriter::loadFrame(const std::string imageFileName)
 
 	AVCodecContext* codecCtx;
 
-	/*codecCtx = avcodec_alloc_context3(pCodec);
-	if (!codecCtx)
-	{
-	std::cerr << "Could not allocate video codec context\n";
-	return nullptr;
-	}*/
-
 	codecCtx = formatCtx->streams[0]->codec;
     codecCtx->width = m_videoStream->codec->width;
     codecCtx->height = m_videoStream->codec->height;
-    codecCtx->pix_fmt = m_videoStream->codec->pix_fmt; //m_pixelFormat;
+    codecCtx->pix_fmt = m_videoStream->codec->pix_fmt; // m_pixelFormat
 
-													 // some formats want stream headers to be separate
+    // some formats want stream headers to be separate
     if (m_formatContext->oformat->flags & AVFMT_GLOBALHEADER)
 		codecCtx->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
@@ -720,12 +603,10 @@ AVFrame* VideoWriter::loadFrame(const std::string imageFileName)
 	{
         qDebug("Could not open codec\n");
 		return nullptr;
-	}
-
-	//avcodec_align_dimensions(codecCtx, &codecCtx->width, &codecCtx->height); // , frame->linesize
+    }
 
 	// No allocation of image for frame
-	AVFrame* pFrame = allocateFrame(codecCtx); // 
+    AVFrame* pFrame = allocateFrame(codecCtx);
 
 	if (!pFrame)
 	{
@@ -748,9 +629,7 @@ AVFrame* VideoWriter::loadFrame(const std::string imageFileName)
 	{
         qDebug() << "Failed to decode frame!\n";
 		return nullptr;
-	}
-
-	//pFrame->data[0];
+    }
 
 	return pFrame;
 }

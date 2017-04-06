@@ -59,7 +59,7 @@ void VideoRecorder::startRecord()
 {
     if (m_currentStatus == VIDEO_STATUS_STOP)
 	{
-        m_lastFrameTime = 0; // QDateTime::currentMSecsSinceEpoch();
+        m_lastFrameTime = 0;
         m_lastFpsTime = m_lastFrameTime;
         m_videoLength = 0;
 
@@ -118,14 +118,12 @@ void VideoRecorder::run()
                 frameDelay = 1000 / m_videoWriter->getFps();
             }
 
-            curTime = m_frameTimer.elapsed(); // targetWidget->getLastFrameBufferUpdateTime()
+            curTime = m_frameTimer.elapsed();
 
             if(m_frameReady && curTime >= m_lastFrameTime + frameDelay || m_videoLength == 0)
             {
-                //frameReady = false;
 				updateFrameBuffer();
-				{
-					//QMutexLocker l(&mtx);
+                {
                     frameLength = curTime - m_lastFrameTime;
                     if (frameLength < 0)
                         frameLength = 1000 / m_videoWriter->getFps();
@@ -134,11 +132,12 @@ void VideoRecorder::run()
 
                     QImage img = m_targetWidget->getFrameBuffer();
 
-                    QPainter p(&img);
+                    // Timestamp frame
+                    /*QPainter p(&img);
                     p.setPen(QPen(Qt::white));
                     p.setFont(QFont("Times", 14, QFont::Bold));
                     p.drawText(QPoint(40, 40), QDateTime::fromMSecsSinceEpoch(m_videoLength).toUTC().toString("hh:mm:ss.zzz"));
-                    p.end();
+                    p.end();*/
 
                     m_videoWriter->writeVideoFrame(img, frameLength);
                     qDebug() << "VR\t" << frameLength << " ms\n";
@@ -158,9 +157,7 @@ void VideoRecorder::run()
 
         case VIDEO_STATUS_STOP:
             if (m_videoWriter->isOpen())
-            {
                 m_videoWriter->close();
-            }
         }
 	}
 }

@@ -36,8 +36,6 @@ private:
     QLabel* fpsLabel;
     QLabel* timerLabel;
 
-	// TODO: QMenu* aboutMenu;
-
     Renderer* renderer;
 	VideoRecorder* videoRecorder;
 
@@ -51,8 +49,7 @@ public slots:
     void lightColorDialog();
     void modelColorDialog();
 
-	void startRecord();
-	//void pauseRecord();
+    void startRecord();
 	void stopRecord();
     void setHighBitRate();
     void setLowBitRate();

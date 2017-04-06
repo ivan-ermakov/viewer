@@ -62,6 +62,5 @@ signals:
 	void updateFrameBuffer();
 
 public slots:
-	void recordFrame();
-	//void recordFrame(QImage&);
+    void recordFrame();
 };

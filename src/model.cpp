@@ -58,11 +58,7 @@ void Model::draw(QOpenGLShaderProgram *program)
     int normalLocation = program->attributeLocation("vNormal");
     program->enableAttributeArray(normalLocation);
     program->setAttributeBuffer(normalLocation, GL_FLOAT, sizeof(QVector3D), 3, sizeof(Vertex));
-
     // Tell OpenGL programmable pipeline how to locate vertex texture coordinate data
-    /*int texcoordLocation = program->attributeLocation("a_texcoord");
-    program->enableAttributeArray(texcoordLocation);
-    program->setAttributeBuffer(texcoordLocation, GL_FLOAT, 0, 2, sizeof(QVector3D));*/
 
     // Draw cube geometry using indices from VBO 1
     glDrawElements(GL_TRIANGLES, bufSize, GL_UNSIGNED_INT, 0);

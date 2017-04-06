@@ -258,8 +258,6 @@ void ModelLoader::run()
             precomputedNormals = false;
             texturePresent = false;
         }
-        /*else
-            std::cout << "Unknown line: " << s << "\n";*/
 
         mtx->lock();
         progress = in.tellg();
